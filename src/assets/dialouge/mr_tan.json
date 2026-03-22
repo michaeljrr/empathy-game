@@ -1,0 +1,68 @@
+{
+  "start": {
+    "text": "Hi... how are you feeling today?",
+    "expression": "neutral",
+    "options": [
+      {
+        "text": "That's not my problem.",
+        "response": "...Oh. I see. I'll just rest then.",
+        "responseExpression": "sad",
+        "next": "end_cold"
+      },
+      {
+        "text": "Whatever.",
+        "response": "Okay... sorry to bother you.",
+        "responseExpression": "sad",
+        "next": "end_cold"
+      },
+      {
+        "text": "Really? How can I help?",
+        "response": "Thank you for asking... my back has been hurting and no one told me my results.",
+        "responseExpression": "happy",
+        "next": "followup"
+      }
+    ]
+  },
+  "followup": {
+    "text": "I've been here three days and feeling quite lost. It means a lot that you asked.",
+    "expression": "happy",
+    "options": [
+      {
+        "text": "I'll look into your results right away.",
+        "response": "Thank you, nurse. I feel better already.",
+        "responseExpression": "happy",
+        "next": "end_warm"
+      },
+      {
+        "text": "I'll let the doctor know about the pain.",
+        "response": "Please. I don't want to complain but it's really affecting my sleep.",
+        "responseExpression": "neutral",
+        "next": "end_warm"
+      }
+    ]
+  },
+  "end_cold": {
+    "text": "...",
+    "expression": "sad",
+    "options": [
+      {
+        "text": "Leave.",
+        "response": "",
+        "responseExpression": "sad",
+        "next": "exit"
+      }
+    ]
+  },
+  "end_warm": {
+    "text": "Thank you, nurse. Knowing someone is looking out for me... it makes a difference.",
+    "expression": "happy",
+    "options": [
+      {
+        "text": "Take care, Mr. Tan.",
+        "response": "Yes, yes. Off you go now.",
+        "responseExpression": "happy",
+        "next": "exit"
+      }
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-import { EntryScene } from '../scenes/EntryScene';
+import { EntryScene }    from '../scenes/EntryScene';
 import { HospitalScene } from '../scenes/HospitalScene';
 import { DialogueScene } from '../scenes/DialogueScene';
 
@@ -6,24 +6,28 @@ type SceneType = 'entry' | 'hospital' | 'dialogue';
 
 export class Game {
   private canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
+  private ctx:    CanvasRenderingContext2D;
   private currentScene: SceneType = 'entry';
   private scenes: {
-    entry: EntryScene;
+    entry:    EntryScene;
     hospital: HospitalScene;
     dialogue: DialogueScene;
   };
 
+  private lastTimestamp: number = 0;
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d')!;
+    this.ctx    = canvas.getContext('2d')!;
 
-    // Initialize all scenes
     this.scenes = {
-      entry: new EntryScene(this.canvas, this.ctx),
+      entry:    new EntryScene(this.canvas, this.ctx),
       hospital: new HospitalScene(this.canvas, this.ctx),
-      dialogue: new DialogueScene(this.canvas, this.ctx)
+      dialogue: new DialogueScene(this.canvas, this.ctx),
     };
+
+    // Hospital starts inactive — entry scene is first
+    this.scenes.hospital.deactivate();
 
     this.setupSceneChangeListener();
     this.startGameLoop();
@@ -31,65 +35,70 @@ export class Game {
 
   private setupSceneChangeListener(): void {
     window.addEventListener('sceneChange', ((e: CustomEvent) => {
-      const { scene, patient } = e.detail;
-      
-      // Cleanup current scene
-      if (this.currentScene === 'hospital') {
-        this.scenes.hospital.cleanup();
-      } else if (this.currentScene === 'dialogue') {
-        this.scenes.dialogue.cleanup();
+      const { scene, characterId } = e.detail as {
+        scene: SceneType;
+        characterId?: string;
+      };
+
+      // ── Leave current scene ───────────────────────────────────────────────
+      switch (this.currentScene) {
+        case 'hospital':
+          // Deactivate BEFORE switching — blocks E from reaching checkInteraction
+          this.scenes.hospital.deactivate();
+          break;
+        case 'dialogue':
+          this.scenes.dialogue.cleanup();
+          break;
       }
 
-      // Change to new scene
-      this.currentScene = scene as SceneType;
+      this.currentScene = scene;
 
-      // Setup new scene if needed
-      if (scene === 'dialogue' && patient) {
-        this.scenes.dialogue.setPatient(patient);
+      // ── Enter new scene ───────────────────────────────────────────────────
+      switch (scene) {
+        case 'hospital':
+          // Re-activate so keys work again
+          this.scenes.hospital.activate();
+          break;
+        case 'dialogue':
+          if (!characterId) {
+            console.error('Game: missing characterId for dialogue scene');
+            return;
+          }
+          this.scenes.dialogue.init(characterId);
+          break;
       }
+
     }) as EventListener);
   }
 
   private startGameLoop(): void {
-    const loop = () => {
-      this.update();
+    const loop = (timestamp: number) => {
+      const delta = timestamp - this.lastTimestamp;
+      this.lastTimestamp = timestamp;
+      this.update(delta);
       this.render();
       requestAnimationFrame(loop);
     };
-    loop();
+    requestAnimationFrame(loop);
   }
 
-  private update(): void {
+  private update(delta: number): void {
     switch (this.currentScene) {
-      case 'entry':
-        this.scenes.entry.update();
-        break;
-      case 'hospital':
-        this.scenes.hospital.update();
-        break;
-      case 'dialogue':
-        this.scenes.dialogue.update();
-        break;
+      case 'entry':    this.scenes.entry.update();         break;
+      case 'hospital': this.scenes.hospital.update();      break;
+      case 'dialogue': this.scenes.dialogue.update(delta); break;
     }
   }
 
   private render(): void {
-    // Clear canvas using logical dimensions
-    const width = (this.canvas as any).logicalWidth || this.canvas.width;
+    const width  = (this.canvas as any).logicalWidth  || this.canvas.width;
     const height = (this.canvas as any).logicalHeight || this.canvas.height;
     this.ctx.clearRect(0, 0, width, height);
 
-    // Render current scene
     switch (this.currentScene) {
-      case 'entry':
-        this.scenes.entry.render();
-        break;
-      case 'hospital':
-        this.scenes.hospital.render();
-        break;
-      case 'dialogue':
-        this.scenes.dialogue.render();
-        break;
+      case 'entry':    this.scenes.entry.render();    break;
+      case 'hospital': this.scenes.hospital.render(); break;
+      case 'dialogue': this.scenes.dialogue.render(); break;
     }
   }
 }
