@@ -223,7 +223,7 @@ export class DialogueScene {
   private state:        SceneState = 'FADE_IN';
   private fadeAlpha     = 1;
   private readonly FADE_DURATION = 600;
-  private fadeStartTime = 0;
+  private fadeElapsed   = 0;
 
   // Input
   private inputCooldown = 0;
@@ -280,7 +280,7 @@ export class DialogueScene {
 
     this.state         = 'FADE_IN';
     this.fadeAlpha     = 1;
-    this.fadeStartTime = performance.now();
+    this.fadeElapsed   = 0;
 
     this.fullText        = this.currentNode.text;
     this.displayedText   = '';
@@ -419,7 +419,8 @@ export class DialogueScene {
   // ── Fade ───────────────────────────────────────────────────────────────────
 
   private tickFade(deltaMs: number, out: boolean): void {
-    const progress = Math.min((performance.now() - this.fadeStartTime) / this.FADE_DURATION, 1);
+    this.fadeElapsed += deltaMs;
+    const progress = Math.min(this.fadeElapsed / this.FADE_DURATION, 1);
     this.fadeAlpha = out ? progress : 1 - progress;
     if (progress >= 1) {
       if (out) {
@@ -478,7 +479,7 @@ export class DialogueScene {
     console.log(`[DialogueScene] Choice: "${option.text}" → ${option.next}`);
 
     if (option.next === 'exit') {
-      this.state = 'FADE_OUT'; this.fadeStartTime = performance.now(); return;
+      this.state = 'FADE_OUT'; this.fadeElapsed = 0; return;
     }
 
     this.pendingExpression = option.responseExpression;
@@ -497,7 +498,7 @@ export class DialogueScene {
     if (!key) return;
     const next = this.tree[key];
     if (!next) {
-      this.state = 'FADE_OUT'; this.fadeStartTime = performance.now(); return;
+      this.state = 'FADE_OUT'; this.fadeElapsed = 0; return;
     }
     console.log(`[DialogueScene] Node: "${key}"`);
     this.currentNode     = next;
