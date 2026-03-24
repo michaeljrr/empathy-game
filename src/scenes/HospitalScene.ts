@@ -12,13 +12,15 @@ export class HospitalScene {
   private keys: { [key: string]: boolean } = {};
   private backgroundImage: HTMLImageElement;
   private backgroundLoaded: boolean = false;
-  private showObstacles: boolean = true;
 
   // ── Whether this scene is the active one ─────────────────────────────────
   // When false, ALL key input is ignored — prevents E from resetting dialogue
   private isActive: boolean = false;
 
-  private get width()  { return (this.canvas as any).logicalWidth  || this.canvas.width;  }
+  private showObstacles: boolean = false; // Set to false to hide obstacles
+  private showBedHitboxes: boolean = false; // Set to false to hide bed interaction zones
+  private showMovementBoundary: boolean = false; // Set to false to hide movement boundary
+  private get width() { return (this.canvas as any).logicalWidth || this.canvas.width; }
   private get height() { return (this.canvas as any).logicalHeight || this.canvas.height; }
 
   private movementBounds = {
@@ -68,14 +70,19 @@ export class HospitalScene {
 
   private setupObstacles(): void {
     this.obstacles = [
-      new Obstacle(245, 200, 130, 160, 'Bed 1'),
-      new Obstacle(660, 205, 130, 160, 'Bed 2'),
-      new Obstacle(245, 635, 130, 300, 'Bed 3'),
-      new Obstacle(660, 635, 130, 300, 'Bed 4'),
-      new Obstacle(150, 410, 200, 100, 'Left Wall'),
-      new Obstacle(750, 410, 200, 100, 'Right Wall'),
-      new Obstacle(450, 150,  50, 200, 'Top Wall'),
-      new Obstacle(450, 750,  50, 200, 'Bottom Wall'),
+      new Obstacle(245, 200, 150, 160, 'Bed 1'),  // Bed 1
+      new Obstacle(660, 205, 150, 160, 'Bed 2'),  // Bed 2
+      new Obstacle(245, 635, 150, 300, 'Bed 3'),  // Bed 3
+      new Obstacle(660, 635, 150, 300, 'Bed 4'),  // Bed 4
+      new Obstacle(150, 410, 200, 100, 'Left Wall'),      // Left partition wall
+      new Obstacle(750, 410, 200, 100, 'Right Wall'),     // Right partition wall
+      new Obstacle(450, 150, 50, 200, 'Top Wall'),       // Top wall
+      new Obstacle(450, 720, 50, 300, 'Bottom Wall'),    // Bottom wall
+      new Obstacle(370, 130, 100, 100, 'Bed 1 Box'), // Bed 1 Box
+      new Obstacle(770, 130, 100, 100, 'Bed 2 Box'), // Bed 2 Box
+      new Obstacle(130, 680, 100, 100, 'Bed 3 Box'), // Bed 3 Box
+      new Obstacle(770, 540, 100, 100, 'Bed 4 Box'), // Bed 4 Box
+      // Add more obstacles as needed...
     ];
   }
 
@@ -183,6 +190,8 @@ export class HospitalScene {
   }
 
   private drawBedHitboxes(): void {
+    if (!this.showBedHitboxes) return; // Skip if disabled
+    
     const ctx = this.ctx;
     for (const patient of this.patients) {
       const hw = 220, hh = 280;
@@ -200,6 +209,8 @@ export class HospitalScene {
   }
 
   private drawMovementBoundary(): void {
+    if (!this.showMovementBoundary) return; // Skip if disabled
+    
     const ctx = this.ctx;
     const bw  = this.movementBounds.right  - this.movementBounds.left;
     const bh  = this.movementBounds.bottom - this.movementBounds.top;
