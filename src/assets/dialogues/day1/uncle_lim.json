@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "id": "uncle_lim_day1",
+    "title": "Uncle Lim - Pre-Surgery Check",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "Morning Uncle Lim! You seem happy today! How are you feeling?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Aiyo, thank you, thank you. I have been feeling really good. Luckily, my donor kidney transplant coming soon... So happy to hear it after so long of waiting.",
+        "responseExpression": "happy",
+        "responseSpeaker": "character",
+        "next": "fasting_check"
+      }
+    ]
+  },
+  "fasting_check": {
+    "text": "So glad to hear that, Uncle! Don't worry, we will take good care of you. You started fasting since midnight?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Of course! I want to get well fast so I can go coffee shop, drink kopi and see my friends.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "uncle_response"
+      }
+    ]
+  },
+  "uncle_response": {
+    "text": "",
+    "expression": "neutral",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "Uncle, you miss your friends already ah? No one to talk 4D with you?",
+        "response": "Hahaha! You really know my heart. Actually ah, whether is the kopi or the kakis, I just miss being outside.",
+        "responseExpression": "happy",
+        "responseSpeaker": "character",
+        "next": "warm_touch"
+      },
+      {
+        "text": "Once you discharge, what's the first thing you want to eat? Don't say hospital porridge ah!",
+        "response": "Hahaha! You really know my heart. Actually ah, whether is the kopi or the kakis, I just miss being outside.",
+        "responseExpression": "happy",
+        "responseSpeaker": "character",
+        "next": "warm_touch"
+      }
+    ]
+  },
+  "warm_touch": {
+    "text": "...",
+    "expression": "neutral",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "Actually hor, I stay here so long already... I tell my son, this pretty Nurse is like my own granddaughter like that. Every day come check on me, so happily... makes me feel not so lonely.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "granddaughter"
+      }
+    ]
+  },
+  "granddaughter": {
+    "text": "Uncle, don't say that lah! Later I cry. You are my favorite patient, you know? Once you recover, then we talk about your coffee shop stories again, okay?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Okay, okay. I won't hold you up on your work. Don't let me take up too much of your time!",
+        "responseExpression": "happy",
+        "responseSpeaker": "character",
+        "next": "uncle_farewell"
+      }
+    ]
+  },
+  "uncle_farewell": {
+    "text": "",
+    "expression": "happy",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "Leave",
+        "response": "",
+        "responseExpression": "happy",
+        "next": "exit"
+      }
+    ]
+  }
+}

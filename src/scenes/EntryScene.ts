@@ -13,6 +13,10 @@ export class EntryScene {
   private titleImage: HTMLImageElement;
   private titleLoaded = false;
 
+  // Store bound event handlers so we can remove them later
+  private boundMouseMove!: (e: MouseEvent) => void;
+  private boundClick!: (e: MouseEvent) => void;
+
   // ── Title image layout ────────────────────────────────────────────────────
   // Only set `width` — height is computed automatically to preserve aspect ratio.
   private readonly TITLE = {
@@ -62,8 +66,16 @@ export class EntryScene {
   }
 
   private setupEventListeners(): void {
-    this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-    this.canvas.addEventListener('click',     (e) => this.handleClick(e));
+    this.boundMouseMove = (e) => this.handleMouseMove(e);
+    this.boundClick     = (e) => this.handleClick(e);
+    this.canvas.addEventListener('mousemove', this.boundMouseMove);
+    this.canvas.addEventListener('click',     this.boundClick);
+  }
+
+  public deactivate(): void {
+    this.canvas.removeEventListener('mousemove', this.boundMouseMove);
+    this.canvas.removeEventListener('click',     this.boundClick);
+    this.canvas.style.cursor = 'default';
   }
 
   private getCanvasCoordinates(e: MouseEvent): { x: number; y: number } {
@@ -83,7 +95,7 @@ export class EntryScene {
     const { x, y } = this.getCanvasCoordinates(e);
     if (this.isPointInButton(x, y)) {
       this.clickFlash = 10;
-      window.dispatchEvent(new CustomEvent('sceneChange', { detail: { scene: 'intro' } }));
+      window.dispatchEvent(new CustomEvent('sceneChange', { detail: { scene: 'nameInput' } }));
     }
   }
 

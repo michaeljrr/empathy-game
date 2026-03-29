@@ -5,15 +5,19 @@
 import patientAHappy   from '../assets/images/characters/patient_a/patient_a_happy.png';
 import patientASad     from '../assets/images/characters/patient_a/patient_a_sad.png';
 import patientANeutral from '../assets/images/characters/patient_a/patient_a_neutral.png';
-import patientBHappy   from '../assets/images/characters/stroke_patient/stroke_patient.png';
+import strokePatient   from '../assets/images/characters/stroke_patient/stroke_patient.png';
+import sleepingPatient from '../assets/images/hospital/sleeping_patient.png';
 import hospitalWardBg  from '../assets/images/hospital/hospitalbg.png';
-import mrTanScript     from '../assets/dialouge/mr_tan.json';
+import uncleLimScript  from '../assets/dialogues/day1/uncle_lim.json';
+import auntieTanScript from '../assets/dialogues/day1/auntie_tan.json';
+import sleepingPatientScript from '../assets/dialogues/day1/sleeping_patient.json';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Expression    = 'neutral' | 'happy' | 'sad' | 'surprised' | 'worried';
 type CharacterType = 'patient' | 'doctor' | 'nurse' | 'family';
 type BgStrip       = 'black' | 'white' | 'none';
+type Speaker       = 'player' | 'character';
 
 interface CharacterConfig {
   id: string;
@@ -27,6 +31,14 @@ interface CharacterConfig {
   stripBg: BgStrip;
   scriptKey: string;
   talkSound?: string;      // Character's talking blip sound
+  spriteFoot?: number;     // Vertical position (fraction of screen) where sprite feet land (default: 1.3)
+  spriteMaxH?: number;     // Max sprite height (fraction of screen) (default: 1.3)
+}
+
+interface PlayerConfig {
+  name: string;
+  accentColor: string;
+  accentTint: string;
 }
 
 interface DialogueOption {
@@ -34,12 +46,15 @@ interface DialogueOption {
   response: string;
   responseExpression: Expression;
   next: string;
+  speaker?: Speaker;       // Who speaks this option (default: 'player')
+  responseSpeaker?: Speaker; // Who speaks the response (default: 'character')
   musicTrack?: string;     // Optional: Change music when this option is chosen
 }
 
 interface DialogueNode {
   text: string;
   expression: Expression;
+  speaker?: Speaker;       // Who speaks this node (default: 'character')
   options: DialogueOption[];
   musicTrack?: string;     // Optional: Music for this node
 }
@@ -53,12 +68,14 @@ interface DialogueTree {
   [nodeKey: string]: DialogueNode | any; // 'any' for metadata
 }
 
-type SceneState = 'FADE_IN' | 'TALKING' | 'WAITING' | 'CHOOSING' | 'RESPONSE' | 'FADE_OUT';
+type SceneState = 'TALKING' | 'WAITING' | 'CHOOSING' | 'RESPONSE';
 
 // ─── Scripts ──────────────────────────────────────────────────────────────────
 
 const DIALOGUE_SCRIPTS: Record<string, DialogueTree> = {
-  mr_tan: mrTanScript as DialogueTree,
+  uncle_lim: uncleLimScript as DialogueTree,
+  auntie_tan: auntieTanScript as DialogueTree,
+  sleeping_patient: sleepingPatientScript as DialogueTree,
 };
 
 // ─── Characters ───────────────────────────────────────────────────────────────
@@ -66,7 +83,7 @@ const DIALOGUE_SCRIPTS: Record<string, DialogueTree> = {
 const CHARACTERS: Record<string, CharacterConfig> = {
   day1patientA: {
     id: 'day1patientA',
-    name: 'Mr. Tan',
+    name: 'Uncle Lim',
     type: 'patient',
     accentColor: '#5B8FA8',
     accentTint: '#D6EAF2',
@@ -80,72 +97,47 @@ const CHARACTERS: Record<string, CharacterConfig> = {
     },
     defaultExpression: 'neutral',
     stripBg: 'black',
-    scriptKey: 'mr_tan',
+    scriptKey: 'uncle_lim',
     talkSound: '/src/assets/audio/voices/elderly_male_blip.mp3',
   },
   day1patientB: {
     id: 'day1patientB',
-    name: 'Mdm. Siti',
+    name: 'Auntie Tan',
     type: 'patient',
     accentColor: '#B5748A',
     accentTint: '#F5E2EA',
     backgroundSrc: hospitalWardBg,
     expressions: {
-      happy: patientBHappy, neutral: patientBHappy,
-      sad:   patientBHappy, worried: patientBHappy, surprised: patientBHappy,
+      happy:     strokePatient,
+      neutral:   strokePatient,
+      sad:       strokePatient,
+      worried:   strokePatient,
+      surprised: strokePatient,
     },
     defaultExpression: 'happy',
     stripBg: 'white',
-    scriptKey: 'mr_tan',
+    scriptKey: 'auntie_tan',
     talkSound: '/src/assets/audio/voices/female_blip.mp3',
   },
-  doctor_senior: {
-    id: 'doctor_senior',
-    name: 'Dr. Lim',
-    type: 'doctor',
-    accentColor: '#3D9970',
-    accentTint: '#D0EDE2',
+  day1patientC: {
+    id: 'day1patientC',
+    name: 'Sleeping Patient',
+    type: 'patient',
+    accentColor: '#7A9B76',
+    accentTint: '#E5F0E4',
     backgroundSrc: hospitalWardBg,
     expressions: {
-      happy: patientAHappy, neutral: patientANeutral,
-      sad:   patientASad,   worried: patientASad, surprised: patientAHappy,
+      neutral:   sleepingPatient,
+      happy:     sleepingPatient,
+      sad:       sleepingPatient,
+      worried:   sleepingPatient,
+      surprised: sleepingPatient,
     },
     defaultExpression: 'neutral',
     stripBg: 'black',
-    scriptKey: 'mr_tan',
-    talkSound: '/src/assets/audio/voices/doctor_male_blip.mp3',
-  },
-  nurse_colleague: {
-    id: 'nurse_colleague',
-    name: 'Nurse Mei',
-    type: 'nurse',
-    accentColor: '#E06B6B',
-    accentTint: '#FAE0E0',
-    backgroundSrc: hospitalWardBg,
-    expressions: {
-      happy: patientBHappy, neutral: patientBHappy,
-      sad:   patientBHappy, worried: patientBHappy, surprised: patientBHappy,
-    },
-    defaultExpression: 'happy',
-    stripBg: 'white',
-    scriptKey: 'mr_tan',
-    talkSound: '/src/assets/audio/voices/nurse_female_blip.mp3',
-  },
-  family_son: {
-    id: 'family_son',
-    name: 'Wei Jie',
-    type: 'family',
-    accentColor: '#E0933A',
-    accentTint: '#FAE9D0',
-    backgroundSrc: hospitalWardBg,
-    expressions: {
-      happy: patientAHappy, neutral: patientANeutral,
-      sad:   patientASad,   worried: patientASad, surprised: patientAHappy,
-    },
-    defaultExpression: 'neutral',
-    stripBg: 'black',
-    scriptKey: 'mr_tan',
-    talkSound: '/src/assets/audio/voices/young_male_blip.mp3',
+    scriptKey: 'sleeping_patient',
+    spriteFoot: 1.0,  // Position higher up on screen
+    spriteMaxH: 1.0,  // Smaller sprite size
   },
 };
 
@@ -209,6 +201,7 @@ export class DialogueScene {
   private ctx:    CanvasRenderingContext2D;
 
   private character!:   CharacterConfig;
+  private player!:      PlayerConfig;
   private images!:      CharacterImages;
   private tree!:        DialogueTree;
   private currentNode!: DialogueNode;
@@ -229,21 +222,24 @@ export class DialogueScene {
   private typewriterTimer = 0;
   private readonly TYPEWRITER_SPEED = 28;
   private isTyping = false;
+  private currentSpeaker: Speaker = 'character'; // Track who is currently speaking
 
   // Bob
   private bobOffset = 0;
   private bobTime   = 0;
 
+  // State
+  private state: SceneState = 'TALKING';
+
   // Choices
   private selectedChoice     = 0;
   private pendingExpression: Expression  = 'neutral';
   private pendingNextNode:   string|null = null;
+  private pendingSpeaker:    Speaker     = 'character';
+  private waitingToAdvance   = false;    // True when waiting for E to advance to next node
 
-  // Fade
-  private state:        SceneState = 'FADE_IN';
-  private fadeAlpha     = 1;
-  private readonly FADE_DURATION = 600;
-  private fadeElapsed   = 0;
+  // Bed tracking for completion
+  private bedLocation: string | null = null;
 
   // Input
   private inputCooldown = 0;
@@ -271,8 +267,10 @@ export class DialogueScene {
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
-  public init(characterId: string): void {
+  public init(characterId: string, bedLocation?: string): void {
     console.log(`[DialogueScene] init: ${characterId}`);
+
+    this.bedLocation = bedLocation || null;
 
     const char = CHARACTERS[characterId];
     if (!char) { console.error(`[DialogueScene] Unknown character: ${characterId}`); return; }
@@ -280,14 +278,26 @@ export class DialogueScene {
     const tree = DIALOGUE_SCRIPTS[char.scriptKey];
     if (!tree?.['start']) { console.error(`[DialogueScene] Missing script/start for: ${characterId}`); return; }
 
+    // Set up player configuration
+    const playerName = localStorage.getItem('playerName') || 'Nurse';
+    this.player = {
+      name: playerName,
+      accentColor: '#5AC57A',  // Default green for player
+      accentTint: '#D4F5DC'
+    };
+
     this.character    = char;
     this.tree         = tree;
     this.currentNode  = tree['start'];
     this.selectedChoice  = 0;
     this.pendingNextNode = null;
+    this.pendingSpeaker  = 'character';
+    this.waitingToAdvance = false;
+    this.currentSpeaker  = this.currentNode.speaker || 'character';
     this.bobTime      = 0;
     this.bobOffset    = 0;
     this.inputCooldown = 0;
+    this.state        = 'TALKING';
 
     if (!this.imageCache.has(characterId)) {
       this.imageCache.set(characterId, buildImageCache(char));
@@ -304,26 +314,29 @@ export class DialogueScene {
     this.boundKeyDown = this.handleKeyDown.bind(this);
     window.addEventListener('keydown', this.boundKeyDown);
 
-    this.state         = 'FADE_IN';
-    this.fadeAlpha     = 1;
-    this.fadeElapsed   = 0;
-
-    this.fullText        = this.currentNode.text;
-    this.displayedText   = '';
-    this.typewriterIndex = 0;
-    this.typewriterTimer = 0;
-    this.isTyping        = false;
+    // Start dialogue immediately - no fade in (Game.ts handles fades)
+    // If node text is empty, skip directly to choices
+    if (!this.currentNode.text?.trim()) {
+      this.state = 'CHOOSING';
+      this.displayedText = '';
+      this.fullText = '';
+      console.log('[DialogueScene] Empty text - → CHOOSING');
+    } else {
+      this.fullText        = this.currentNode.text;
+      this.displayedText   = '';
+      this.typewriterIndex = 0;
+      this.typewriterTimer = 0;
+      this.isTyping        = true;
+    }
   }
 
   public update(deltaMs: number): void {
     this.inputCooldown = Math.max(0, this.inputCooldown - deltaMs);
     switch (this.state) {
-      case 'FADE_IN':  this.tickFade(deltaMs, false); break;
       case 'TALKING':  this.tickTypewriter(deltaMs); this.tickBob(deltaMs, true);  break;
       case 'WAITING':  this.tickBob(deltaMs, false); break;
       case 'CHOOSING': this.bobOffset = 0; break;
       case 'RESPONSE': this.tickTypewriter(deltaMs); this.tickBob(deltaMs, true);  break;
-      case 'FADE_OUT': this.tickFade(deltaMs, true);  break;
     }
   }
 
@@ -345,12 +358,6 @@ export class DialogueScene {
 
     // 3. Dialogue box
     if (this.character) this.renderBox(w, h);
-
-    // 4. Fade overlay
-    if (this.fadeAlpha > 0) {
-      this.ctx.fillStyle = `rgba(0,0,0,${this.fadeAlpha})`;
-      this.ctx.fillRect(0, 0, w, h);
-    }
   }
 
   public cleanup(): void {
@@ -379,14 +386,18 @@ export class DialogueScene {
     //  We scale the sprite so it fits within CHAR_MAX_H * h, then anchor
     //  the bottom of the sprite to CHAR_FOOT * h (+ bob offset).
     //
-    const maxDrawH = h * this.CHAR_MAX_H;
+    // Use character-specific positioning if available, otherwise use defaults
+    const charFoot = this.character.spriteFoot ?? this.CHAR_FOOT;
+    const charMaxH = this.character.spriteMaxH ?? this.CHAR_MAX_H;
+    
+    const maxDrawH = h * charMaxH;
     const scale    = Math.min(maxDrawH / srcH, 1); // never upscale past natural size
     const drawW    = srcW * scale;
     const drawH    = srcH * scale;
 
     // Centre horizontally, feet at CHAR_FOOT
     const drawX = (w - drawW) / 2;
-    const drawY = h * this.CHAR_FOOT - drawH + this.bobOffset;
+    const drawY = h * charFoot - drawH + this.bobOffset;
 
     this.ctx.drawImage(src as CanvasImageSource, drawX, drawY, drawW, drawH);
   }
@@ -430,8 +441,16 @@ export class DialogueScene {
   }
 
   private onTypewriterDone(): void {
-    if      (this.state === 'TALKING')  { this.state = 'WAITING'; console.log('[DialogueScene] → WAITING'); }
-    else if (this.state === 'RESPONSE') { this.advanceToNextNode(); }
+    if (this.state === 'TALKING') {
+      this.state = 'WAITING';
+      this.waitingToAdvance = false;
+      console.log('[DialogueScene] → WAITING');
+    } else if (this.state === 'RESPONSE') {
+      // After response, wait for user to press E before advancing
+      this.state = 'WAITING';
+      this.waitingToAdvance = true;
+      console.log('[DialogueScene] → WAITING (to advance)');
+    }
   }
 
   private skipTypewriter(): void {
@@ -450,28 +469,9 @@ export class DialogueScene {
       : Math.sin(this.bobTime / 800) * 2;
   }
 
-  // ── Fade ───────────────────────────────────────────────────────────────────
-
-  private tickFade(deltaMs: number, out: boolean): void {
-    this.fadeElapsed += deltaMs;
-    const progress = Math.min(this.fadeElapsed / this.FADE_DURATION, 1);
-    this.fadeAlpha = out ? progress : 1 - progress;
-    if (progress >= 1) {
-      if (out) {
-        window.dispatchEvent(new CustomEvent('sceneChange', { detail: { scene: 'hospital' } }));
-      } else {
-        this.fadeAlpha = 0;
-        this.state     = 'TALKING';
-        this.isTyping  = true;
-        console.log('[DialogueScene] → TALKING');
-      }
-    }
-  }
-
   // ── Input ──────────────────────────────────────────────────────────────────
 
   private handleKeyDown(e: KeyboardEvent): void {
-    if (this.state === 'FADE_IN' || this.state === 'FADE_OUT') return;
     if (this.inputCooldown > 0) return;
     this.inputCooldown = this.INPUT_COOLDOWN_MS;
 
@@ -486,8 +486,23 @@ export class DialogueScene {
     }
     if (this.state === 'WAITING') {
       if (key === 'e' || key === 'enter' || key === ' ') {
-        this.state = 'CHOOSING'; this.selectedChoice = 0;
-        console.log('[DialogueScene] → CHOOSING');
+        // If waiting to advance to next node (after a response), do that
+        if (this.waitingToAdvance) {
+          this.waitingToAdvance = false;
+          this.advanceToNextNode();
+          return;
+        }
+        
+        // Otherwise, show choices or auto-confirm single empty option
+        const opts = this.currentNode.options;
+        if (opts.length === 1 && !opts[0].text?.trim()) {
+          this.selectedChoice = 0;
+          this.confirmChoice();
+        } else {
+          this.state = 'CHOOSING'; 
+          this.selectedChoice = 0;
+          console.log('[DialogueScene] → CHOOSING');
+        }
       }
       return;
     }
@@ -513,7 +528,11 @@ export class DialogueScene {
     console.log(`[DialogueScene] Choice: "${option.text}" → ${option.next}`);
 
     if (option.next === 'exit') {
-      this.state = 'FADE_OUT'; this.fadeElapsed = 0; return;
+      // Exit dialogue - dispatch scene change immediately
+      window.dispatchEvent(new CustomEvent('sceneChange', { 
+        detail: { scene: 'hospital', bedLocation: this.bedLocation } 
+      }));
+      return;
     }
 
     // Change music if option specifies a track
@@ -523,11 +542,13 @@ export class DialogueScene {
 
     this.pendingExpression = option.responseExpression;
     this.pendingNextNode   = option.next;
+    this.pendingSpeaker    = option.responseSpeaker || 'character';
 
     if (!option.response?.trim()) {
       this.advanceToNextNode();
     } else {
       this.state = 'RESPONSE';
+      this.currentSpeaker = this.pendingSpeaker;
       this.startTypewriter(option.response);
     }
   }
@@ -537,7 +558,11 @@ export class DialogueScene {
     if (!key) return;
     const next = this.tree[key];
     if (!next) {
-      this.state = 'FADE_OUT'; this.fadeElapsed = 0; return;
+      // End of dialogue - exit to hospital
+      window.dispatchEvent(new CustomEvent('sceneChange', { 
+        detail: { scene: 'hospital', bedLocation: this.bedLocation } 
+      }));
+      return;
     }
     console.log(`[DialogueScene] Node: "${key}"`);
     
@@ -546,11 +571,31 @@ export class DialogueScene {
       this.changeMusic(next.musicTrack);
     }
     
+    // Safety check: if node has no options, auto-exit
+    if (!next.options || next.options.length === 0) {
+      console.log('[DialogueScene] No options - auto-exiting');
+      window.dispatchEvent(new CustomEvent('sceneChange', { 
+        detail: { scene: 'hospital', bedLocation: this.bedLocation } 
+      }));
+      return;
+    }
+    
     this.currentNode     = next;
     this.pendingNextNode = null;
     this.selectedChoice  = 0;
-    this.state           = 'TALKING';
-    this.startTypewriter(this.currentNode.text);
+    this.waitingToAdvance = false;
+    this.currentSpeaker  = this.currentNode.speaker || 'character';
+    
+    // If node text is empty, skip directly to choices
+    if (!this.currentNode.text?.trim()) {
+      this.state = 'CHOOSING';
+      this.displayedText = '';
+      this.fullText = '';
+      console.log('[DialogueScene] Empty text - → CHOOSING');
+    } else {
+      this.state = 'TALKING';
+      this.startTypewriter(this.currentNode.text);
+    }
   }
 
   // ── Dialogue box ───────────────────────────────────────────────────────────
@@ -559,8 +604,12 @@ export class DialogueScene {
     const boxX   = this.MARGIN;
     const boxY   = h - this.BOX_H - this.MARGIN;
     const boxW   = w - this.MARGIN * 2;
-    const accent = this.character.accentColor;
-    const tint   = this.character.accentTint;
+    
+    // Determine speaker and get their colors/name
+    const speaker = this.currentSpeaker;
+    const speakerName = speaker === 'player' ? this.player.name : this.character.name;
+    const accent = speaker === 'player' ? this.player.accentColor : this.character.accentColor;
+    const tint = speaker === 'player' ? this.player.accentTint : this.character.accentTint;
 
     // Panel
     this.ctx.fillStyle = 'rgba(15, 20, 30, 0.88)';
@@ -581,7 +630,7 @@ export class DialogueScene {
     this.ctx.stroke();
 
     // Name plate
-    const npW = this.measureStr(this.character.name, 14, 700) + 28;
+    const npW = this.measureStr(speakerName, 14, 700) + 28;
     this.ctx.fillStyle = accent;
     this.rrect(boxX + this.BOX_PAD, boxY - 28, npW, 28, [6, 6, 0, 0]);
     this.ctx.fill();
@@ -589,7 +638,7 @@ export class DialogueScene {
     this.ctx.font         = '700 14px "Segoe UI", sans-serif';
     this.ctx.textBaseline = 'middle';
     this.ctx.textAlign    = 'left';
-    this.ctx.fillText(this.character.name, boxX + this.BOX_PAD + 14, boxY - 14);
+    this.ctx.fillText(speakerName, boxX + this.BOX_PAD + 14, boxY - 14);
 
     // ── Text states ───────────────────────────────────────────────────────
 

@@ -1,9 +1,10 @@
-import { EntryScene }    from '../scenes/EntryScene';
-import { IntroScene }    from '../scenes/IntroScene';
-import { HospitalScene } from '../scenes/HospitalScene';
-import { DialogueScene } from '../scenes/DialogueScene';
+import { EntryScene }     from '../scenes/EntryScene';
+import { NameInputScene } from '../scenes/NameInputScene';
+import { IntroScene }     from '../scenes/IntroScene';
+import { HospitalScene }  from '../scenes/HospitalScene';
+import { DialogueScene }  from '../scenes/DialogueScene';
 
-type SceneType = 'entry' | 'intro' | 'hospital' | 'dialogue';
+type SceneType = 'entry' | 'nameInput' | 'intro' | 'hospital' | 'dialogue';
 
 type FadeState = 'none' | 'out' | 'in';
 
@@ -12,10 +13,11 @@ export class Game {
   private ctx:    CanvasRenderingContext2D;
   private currentScene: SceneType = 'entry';
   private scenes: {
-    entry:    EntryScene;
-    intro:    IntroScene;
-    hospital: HospitalScene;
-    dialogue: DialogueScene;
+    entry:     EntryScene;
+    nameInput: NameInputScene;
+    intro:     IntroScene;
+    hospital:  HospitalScene;
+    dialogue:  DialogueScene;
   };
 
   private lastTimestamp: number = 0;
@@ -23,7 +25,7 @@ export class Game {
   // ── Fade transition ───────────────────────────────────────
   private fadeAlpha:   number    = 0;
   private fadeState:   FadeState = 'none';
-  private pendingScene: { scene: SceneType; characterId?: string } | null = null;
+  private pendingScene: { scene: SceneType; characterId?: string; bedLocation?: string } | null = null;
   private readonly FADE_SPEED = 0.05; // alpha change per frame (~20 frames = 333ms at 60fps)
 
   constructor(canvas: HTMLCanvasElement) {
@@ -31,10 +33,11 @@ export class Game {
     this.ctx    = canvas.getContext('2d')!;
 
     this.scenes = {
-      entry:    new EntryScene(this.canvas, this.ctx),
-      intro:    new IntroScene(this.canvas, this.ctx),
-      hospital: new HospitalScene(this.canvas, this.ctx),
-      dialogue: new DialogueScene(this.canvas, this.ctx),
+      entry:     new EntryScene(this.canvas, this.ctx),
+      nameInput: new NameInputScene(this.canvas, this.ctx),
+      intro:     new IntroScene(this.canvas, this.ctx),
+      hospital:  new HospitalScene(this.canvas, this.ctx),
+      dialogue:  new DialogueScene(this.canvas, this.ctx),
     };
 
     // Hospital starts inactive — entry scene is first
@@ -46,33 +49,51 @@ export class Game {
 
   private setupSceneChangeListener(): void {
     window.addEventListener('sceneChange', ((e: CustomEvent) => {
-      const { scene, characterId } = e.detail as {
+      const { scene, characterId, bedLocation, startDay, dayPatientCount } = e.detail as {
         scene: SceneType;
         characterId?: string;
+        bedLocation?: string;
+        startDay?: boolean;
+        dayPatientCount?: number;
       };
 
+      // Handle bed completion when returning from dialogue
+      if (scene === 'hospital' && bedLocation) {
+        this.scenes.hospital.completeBed(bedLocation);
+      }
+
+      // Handle day initialization
+      if (startDay && dayPatientCount !== undefined) {
+        this.scenes.hospital.startDay(dayPatientCount);
+      }
+
       // Begin fade-out; actual scene switch happens at peak black
-      this.pendingScene = { scene, characterId };
+      this.pendingScene = { scene, characterId, bedLocation };
       this.fadeAlpha    = 0;
       this.fadeState    = 'out';
 
     }) as EventListener);
   }
 
-  private applySceneSwitch(pending: { scene: SceneType; characterId?: string }): void {
-    const { scene, characterId } = pending;
+  private applySceneSwitch(pending: { scene: SceneType; characterId?: string; bedLocation?: string }): void {
+    const { scene, characterId, bedLocation } = pending;
 
     // Leave current scene
     switch (this.currentScene) {
-      case 'intro':    this.scenes.intro.deactivate();    break;
-      case 'hospital': this.scenes.hospital.deactivate(); break;
-      case 'dialogue': this.scenes.dialogue.cleanup();    break;
+      case 'entry':     this.scenes.entry.deactivate();     break;
+      case 'nameInput': this.scenes.nameInput.deactivate(); break;
+      case 'intro':     this.scenes.intro.deactivate();     break;
+      case 'hospital':  this.scenes.hospital.deactivate();  break;
+      case 'dialogue':  this.scenes.dialogue.cleanup();     break;
     }
 
     this.currentScene = scene;
 
     // Enter new scene
     switch (scene) {
+      case 'nameInput':
+        this.scenes.nameInput.activate();
+        break;
       case 'intro':
         this.scenes.intro.activate();
         break;
@@ -81,14 +102,14 @@ export class Game {
         break;
       case 'dialogue':
         if (!characterId) { console.error('Game: missing characterId for dialogue scene'); return; }
-        this.scenes.dialogue.init(characterId);
+        this.scenes.dialogue.init(characterId, bedLocation);
         break;
     }
   }
 
   private startGameLoop(): void {
     const loop = (timestamp: number) => {
-      const delta = timestamp - this.lastTimestamp;
+      const delta = this.lastTimestamp === 0 ? 16.67 : timestamp - this.lastTimestamp;
       this.lastTimestamp = timestamp;
       this.update(delta);
       this.render();
@@ -112,10 +133,11 @@ export class Game {
     }
 
     switch (this.currentScene) {
-      case 'entry':    this.scenes.entry.update();         break;
-      case 'intro':    this.scenes.intro.update(delta);    break;
-      case 'hospital': this.scenes.hospital.update();      break;
-      case 'dialogue': this.scenes.dialogue.update(delta); break;
+      case 'entry':     this.scenes.entry.update();          break;
+      case 'nameInput': this.scenes.nameInput.update(delta); break;
+      case 'intro':     this.scenes.intro.update(delta);     break;
+      case 'hospital':  this.scenes.hospital.update();       break;
+      case 'dialogue':  this.scenes.dialogue.update(delta);  break;
     }
   }
 
@@ -125,10 +147,11 @@ export class Game {
     this.ctx.clearRect(0, 0, width, height);
 
     switch (this.currentScene) {
-      case 'entry':    this.scenes.entry.render();    break;
-      case 'intro':    this.scenes.intro.render();    break;
-      case 'hospital': this.scenes.hospital.render(); break;
-      case 'dialogue': this.scenes.dialogue.render(); break;
+      case 'entry':     this.scenes.entry.render();     break;
+      case 'nameInput': this.scenes.nameInput.render(); break;
+      case 'intro':     this.scenes.intro.render();     break;
+      case 'hospital':  this.scenes.hospital.render();  break;
+      case 'dialogue':  this.scenes.dialogue.render();  break;
     }
 
     // Draw fade overlay on top of everything
@@ -148,10 +171,10 @@ export class Game {
     bedE?: { image?: string; characterId?: string }
   ): void {
     this.scenes.hospital.setBedDay(
-      bedA ?? { image: '../assets/images/backgrounds/patientA_in_bed.png', characterId: 'day1patientA' },
-      bedB ?? { image: '../assets/images/backgrounds/patientB_in_bed.png', characterId: 'day1patientB' },
-      bedC ?? { image: '../assets/images/backgrounds/patientC_in_bed.png', characterId: 'doctor_senior' },
-      bedD ?? { image: '../assets/images/backgrounds/bed.png' },
+      bedA ?? { image: '../assets/images/hospital/patientA_in_bed.png', characterId: 'day1patientA' },
+      bedB ?? { image: '../assets/images/hospital/patientB_in_bed.png', characterId: 'day1patientB' },
+      bedC ?? { image: '../assets/images/hospital/patientC_in_bed.png', characterId: 'day1patientC' },
+      bedD ?? { image: '../assets/images/hospital/bed.png' },
       bedE
     );
   }

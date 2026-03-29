@@ -61,7 +61,7 @@ export class IntroScene {
 
   // ── Input ─────────────────────────────────────────────────────────────────
   private inputCooldown = 0;
-  private readonly INPUT_COOLDOWN_MS = 200;
+  private readonly INPUT_COOLDOWN_MS = 100;
   private boundKeyDown!: (e: KeyboardEvent) => void;
 
   constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
@@ -80,7 +80,7 @@ export class IntroScene {
     this.fadingIn         = true;
     this.fadingOut        = false;
     this.fadeAlpha        = 1;
-    this.inputCooldown    = 0;
+    this.inputCooldown    = 300; // Prevent immediate input during fade-in
     this.titleHoldTimer   = 0;
     this.startBeat(0);
 
@@ -108,7 +108,9 @@ export class IntroScene {
     if (this.fadingOut) {
       this.fadeAlpha = Math.min(1, this.fadeAlpha + this.FADE_SPEED);
       if (this.fadeAlpha >= 1) {
-        window.dispatchEvent(new CustomEvent('sceneChange', { detail: { scene: 'hospital' } }));
+        window.dispatchEvent(new CustomEvent('sceneChange', { 
+          detail: { scene: 'hospital', startDay: true, dayPatientCount: 3 } 
+        }));
         this.fadingOut = false;
       }
       return; // don't process anything else while fading out
@@ -244,8 +246,8 @@ export class IntroScene {
     ctx.lineWidth   = 1.5;
     ctx.globalAlpha = 0.5;
     ctx.beginPath();
-    ctx.moveTo(w * 0.3, h / 2 - 64);
-    ctx.lineTo(w * 0.7, h / 2 - 64);
+    ctx.moveTo(w * 0.3, h / 2 - 80);
+    ctx.lineTo(w * 0.7, h / 2 - 80);
     ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(w * 0.3, h / 2 + 64);
@@ -282,7 +284,7 @@ export class IntroScene {
 
     const isLast = this.beatIndex >= BEATS.length - 1;
     if (isLast) {
-      // Fade out then dispatch sceneChange
+      // Fade out then dispatch sceneChange with day info
       this.fadingOut       = true;
       this.waitingForInput = false;
     } else {

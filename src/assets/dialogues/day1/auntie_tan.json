@@ -1,0 +1,83 @@
+{
+  "metadata": {
+    "id": "auntie_tan_day1",
+    "title": "Auntie Tan - Discharge Day",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "Wow Auntie Tan! Already dressed I see!",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Of course, my son says he's coming to fetch me soon. I am so glad to have recovered from my stroke, although my legs are still a bit shaky and I can only walk a bit. I am so happy that I can be discharged!",
+        "responseExpression": "happy",
+        "responseSpeaker": "character",
+        "next": "mc_advice"
+      }
+    ]
+  },
+  "mc_advice": {
+    "text": "",
+    "expression": "happy",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "Auntie, remember what the PT said! Do try to use the walking frame until you feel stable enough to walk alone!",
+        "response": "Aiya, I know, I know! You very longwinded leh, just like my daughter. 'Auntie, don't do this... Auntie, take your pill...' Anyways, thank you very much. This one is for you.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "cookies"
+      },
+      {
+        "text": "Don't go home and straight away go and mop the floor or do housework ah! Remember to rest!",
+        "response": "Aiya, I know, I know! You very longwinded leh, just like my daughter. 'Auntie, don't do this... Auntie, take your pill...' Anyways, thank you very much. This one is for you.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "cookies"
+      }
+    ]
+  },
+  "cookies": {
+    "text": "(hands you a container of cookies)",
+    "expression": "neutral",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "Auntie… don't need to give me things one lah! Keep them for yourself to eat!",
+        "responseExpression": "happy",
+        "responseSpeaker": "player",
+        "next": "insist"
+      }
+    ]
+  },
+  "insist": {
+    "text": "You must take them, I insist!",
+    "expression": "happy",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "Okay, okay, Auntie Tan! You go home, you must rest more ah!",
+        "responseExpression": "happy",
+        "responseSpeaker": "player",
+        "next": "farewell"
+      }
+    ]
+  },
+  "farewell": {
+    "text": "",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "Leave",
+        "response": "",
+        "responseExpression": "happy",
+        "next": "exit"
+      }
+    ]
+  }
+}
