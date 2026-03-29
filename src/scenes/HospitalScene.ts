@@ -103,17 +103,6 @@ export class HospitalScene {
 
   private showBedHitboxes: boolean = false; // Set to false to hide bed interaction zones
 
-  // ── Bed sprite layout — adjust width/height/offsetX/offsetY per bed ─────────
-  // offsetX/offsetY shift the image relative to the patient's (x, y) anchor point.
-  // The image is drawn so its horizontal centre aligns with patient.x + offsetX,
-  // and its bottom edge sits at patient.y + offsetY.
-  private readonly BED_SPRITES = [
-    { src: patientA_in_bed, width: 480, height: 500, offsetX: 20, offsetY: 340 },  // Bed A
-    { src: patientB_in_bed, width: 480, height: 500, offsetX: -10, offsetY: 340 },  // Bed B
-    { src: patientC_in_bed, width: 480, height: 500, offsetX: -50, offsetY: 340 },  // Bed C
-    { src: bed, width: 480, height: 500, offsetX: -70, offsetY: 340 },  // Bed D
-  ];
-  private bedImages: Array<{ img: HTMLImageElement; loaded: boolean }> = [];
   private get width() { return (this.canvas as any).logicalWidth || this.canvas.width; }
   private get height() { return (this.canvas as any).logicalHeight || this.canvas.height; }
 
