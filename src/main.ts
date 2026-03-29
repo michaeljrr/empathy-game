@@ -12,8 +12,8 @@ if (!canvas) {
 const dpr = window.devicePixelRatio || 1;
 
 // Set fixed logical canvas size for game logic (consistent across all screens)
-const logicalWidth = 900;
-const logicalHeight = 900;
+const logicalWidth = 1536;
+const logicalHeight = 672;
 
 // Store logical dimensions on canvas for game logic to use
 (canvas as any).logicalWidth = logicalWidth;

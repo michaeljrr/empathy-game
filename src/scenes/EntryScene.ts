@@ -1,105 +1,193 @@
+import entryBg    from '../assets/images/entry/entry_background.png';
+import gameTitleImg from '../assets/images/entry/game_title.png';
+
 export class EntryScene {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private playButtonHovered: boolean = false;
-  private playButtonBounds = { x: 350, y: 550, width: 200, height: 60 };
-  private get width() { return (this.canvas as any).logicalWidth || this.canvas.width; }
+  private clickFlash: number = 0;   // counts down frames after click
+  private fontLoaded: boolean = false;
+
+  private bgImage: HTMLImageElement;
+  private bgLoaded = false;
+  private titleImage: HTMLImageElement;
+  private titleLoaded = false;
+
+  // ── Title image layout ────────────────────────────────────────────────────
+  // Only set `width` — height is computed automatically to preserve aspect ratio.
+  private readonly TITLE = {
+    width:  500,   // rendered width in canvas pixels (height auto-calculated)
+    offsetX: -10,    // shift left(-) / right(+) from horizontal centre
+    offsetY: 40,  // shift up(-) / down(+) from vertical centre
+  };
+
+  // ── Play button layout ────────────────────────────────────────────────────
+  private readonly BTN = {
+    width:  220,   // button width
+    height:  56,   // button height
+    offsetX:  -10,   // shift from centre
+    offsetY: 150,  // shift down from centre (positive = lower half)
+  };
+
+  private get width()  { return (this.canvas as any).logicalWidth  || this.canvas.width;  }
   private get height() { return (this.canvas as any).logicalHeight || this.canvas.height; }
+
+  private get playButtonBounds() {
+    const cx = this.width  / 2 + this.BTN.offsetX;
+    const cy = this.height / 2 + this.BTN.offsetY;
+    return { x: cx - this.BTN.width / 2, y: cy - this.BTN.height / 2,
+             width: this.BTN.width, height: this.BTN.height };
+  }
 
   constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
     this.canvas = canvas;
-    this.ctx = ctx;
+    this.ctx    = ctx;
+
+    this.bgImage = new Image();
+    this.bgImage.src = entryBg;
+    this.bgImage.onload = () => { this.bgLoaded = true; };
+
+    this.titleImage = new Image();
+    this.titleImage.src = gameTitleImg;
+    this.titleImage.onload = () => { this.titleLoaded = true; };
+
     this.setupEventListeners();
+
+    // Load pixel font from Google Fonts
+    const pf = new FontFace(
+      'Press Start 2P',
+      'url(https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff2)'
+    );
+    pf.load().then(f => { document.fonts.add(f); this.fontLoaded = true; }).catch(() => {});
   }
 
   private setupEventListeners(): void {
     this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-    this.canvas.addEventListener('click', (e) => this.handleClick(e));
+    this.canvas.addEventListener('click',     (e) => this.handleClick(e));
   }
 
-  private getCanvasCoordinates(e: MouseEvent): { x: number, y: number } {
-    const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.width / rect.width;
+  private getCanvasCoordinates(e: MouseEvent): { x: number; y: number } {
+    const rect   = this.canvas.getBoundingClientRect();
+    const scaleX = this.width  / rect.width;
     const scaleY = this.height / rect.height;
-    
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY
-    };
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
   }
 
   private handleMouseMove(e: MouseEvent): void {
-    const coords = this.getCanvasCoordinates(e);
-    this.playButtonHovered = this.isPointInButton(coords.x, coords.y);
+    const { x, y } = this.getCanvasCoordinates(e);
+    this.playButtonHovered = this.isPointInButton(x, y);
     this.canvas.style.cursor = this.playButtonHovered ? 'pointer' : 'default';
   }
 
   private handleClick(e: MouseEvent): void {
-    const coords = this.getCanvasCoordinates(e);
-
-    if (this.isPointInButton(coords.x, coords.y)) {
-      // Trigger scene change to hospital scene
-      const event = new CustomEvent('sceneChange', { detail: { scene: 'hospital' } });
-      window.dispatchEvent(event);
+    const { x, y } = this.getCanvasCoordinates(e);
+    if (this.isPointInButton(x, y)) {
+      this.clickFlash = 10;
+      window.dispatchEvent(new CustomEvent('sceneChange', { detail: { scene: 'hospital' } }));
     }
   }
 
   private isPointInButton(x: number, y: number): boolean {
-    return x >= this.playButtonBounds.x &&
-           x <= this.playButtonBounds.x + this.playButtonBounds.width &&
-           y >= this.playButtonBounds.y &&
-           y <= this.playButtonBounds.y + this.playButtonBounds.height;
+    const b = this.playButtonBounds;
+    return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
   }
 
   public update(): void {
-    // Animation logic can go here
+    if (this.clickFlash > 0) this.clickFlash--;
   }
 
   public render(): void {
     const ctx = this.ctx;
-    
-    // Clear canvas
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, this.width, this.height);
 
-    // Title
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 64px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('EMPATHY', this.width / 2, 250);
+    // Background — cover crop: scale to fill, clip overflow, no stretching
+    if (this.bgLoaded) {
+      const scale = Math.max(this.width / this.bgImage.naturalWidth, this.height / this.bgImage.naturalHeight);
+      const sw = this.bgImage.naturalWidth  * scale;
+      const sh = this.bgImage.naturalHeight * scale;
+      const sx = (this.width  - sw) / 2;
+      const sy = (this.height - sh) / 2;
+      ctx.drawImage(this.bgImage, sx, sy, sw, sh);
+    } else {
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, this.width, this.height);
+    }
 
-    ctx.font = '32px Arial';
-    ctx.fillStyle = '#a0a0a0';
-    ctx.fillText('A Nurse\'s Journey', this.width / 2, 320);
+    // Game title image — preserve natural aspect ratio
+    if (this.titleLoaded) {
+      const aspect = this.titleImage.naturalHeight / this.titleImage.naturalWidth;
+      const tw = this.TITLE.width;
+      const th = tw * aspect;
+      const tx = this.width  / 2 + this.TITLE.offsetX - tw / 2;
+      const ty = this.height / 2 + this.TITLE.offsetY - th / 2;
+      ctx.drawImage(this.titleImage, tx, ty, tw, th);
+    }
 
-    // Instructions
-    ctx.font = '20px Arial';
-    ctx.fillStyle = '#808080';
-    ctx.fillText('Care for patients. Make meaningful choices.', this.width / 2, 450);
+    // Pixel-art style play button
+    this.drawPixelButton();
+  }
 
-    // Play button
-    const btnColor = this.playButtonHovered ? '#4CAF50' : '#2e7d32';
-    ctx.fillStyle = btnColor;
-    ctx.fillRect(
-      this.playButtonBounds.x,
-      this.playButtonBounds.y,
-      this.playButtonBounds.width,
-      this.playButtonBounds.height
-    );
+  private drawPixelButton(): void {
+    const ctx     = this.ctx;
+    const b       = this.playButtonBounds;
+    const hovered = this.playButtonHovered;
+    const pressed = this.clickFlash > 0;
 
-    // Play button text
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 28px Arial';
-    ctx.fillText(
-      'PLAY',
-      this.width / 2,
-      this.playButtonBounds.y + 40
-    );
+    // ─ Palette ─────────────────────────────────────────
+    const CREAM   = '#f5f0e8';              // label face
+    const CREAM_H = '#fdfaf4';              // top-left pixel highlight
+    const TEAL    = '#1e5f5f';              // border + text colour
+    const NAVY    = '#0d3333';              // depth-shadow colour
 
-    // Credits
-    ctx.font = '16px Arial';
-    ctx.fillStyle = '#606060';
-    ctx.textAlign = 'center';
-    ctx.fillText('© 2026 SUTD', this.width / 2, this.height - 40);
+    // ─ Press physics ─────────────────────────────────
+    const BORDER  = 3;                      // chunky border thickness
+    const depth   = pressed ? 0 : (hovered ? 2 : 4);  // pixel shadow depth
+    const dy      = pressed ? 4 : (hovered ? 2 : 0);  // button shifts down
+
+    const x = b.x, y = b.y + dy, w = b.width, h = b.height;
+
+    // 1. Depth shadow (disappears when pressed)
+    if (depth > 0) {
+      ctx.fillStyle = NAVY;
+      ctx.fillRect(x + depth, y + depth, w, h);
+    }
+
+    // 2. Chunky pixel border
+    ctx.fillStyle = TEAL;
+    ctx.fillRect(x - BORDER, y - BORDER, w + BORDER * 2, h + BORDER * 2);
+
+    // 3. Cream label face
+    ctx.fillStyle = pressed ? '#e8e3db' : CREAM; // slightly darker when pressed
+    ctx.fillRect(x, y, w, h);
+
+    // 4. Top-left highlight strip (2px, no rounded corners)
+    ctx.fillStyle = CREAM_H;
+    ctx.fillRect(x,     y,     w, 2); // top
+    ctx.fillRect(x,     y,     2, h); // left
+
+    // 5. Bottom-right inner shadow (gives face a subtle inset depth)
+    ctx.fillStyle = 'rgba(30, 95, 95, 0.18)';
+    ctx.fillRect(x + w - 2, y + 2, 2, h - 2); // right inner
+    ctx.fillRect(x + 2,     y + h - 2, w - 2, 2); // bottom inner
+
+    // 6. Flash overlay on click
+    if (pressed) {
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.fillRect(x, y, w, h);
+    }
+
+    // 7. Label text in pixel font
+    const font = this.fontLoaded ? "'Press Start 2P'" : "'Courier New', monospace";
+    const fontSize = 12;
+    ctx.font        = `${fontSize}px ${font}`;
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    // 1-pixel hard drop shadow (down only, no x-offset, keeps text sharp)
+    ctx.fillStyle = NAVY;
+    ctx.fillText('PLAY', cx, cy + 1);
+    // Main label on top
+    ctx.fillStyle = pressed ? '#ffffff' : TEAL;
+    ctx.fillText('PLAY', cx, cy);
   }
 }

@@ -6,14 +6,14 @@ import nurseWalk2 from '../assets/images/characters/nurse/nurse_walk2.png';
 export class Player {
   public x: number;
   public y: number;
-  public width: number = 150;
-  public height: number = 150;
+  public width: number = 230;
+  public height: number = 280;
   
   // Separate dimensions for each sprite type
-  public walkingWidth: number = 120;
-  public walkingHeight: number = 150;
-  public idleWidth: number = 120;
-  public idleHeight: number = 150;
+  public walkingWidth: number = 230;
+  public walkingHeight: number = 280;
+  public idleWidth: number = 230;
+  public idleHeight: number = 280;
   
   private happySprite: HTMLImageElement;
   private walkingSprite1: HTMLImageElement;

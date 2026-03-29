@@ -1,14 +1,16 @@
 import { Player } from '../entities/Player';
 import { Patient } from '../entities/Patient';
-import { Obstacle } from '../entities/Obstacle';
-import wardEmptyBg from '../assets/images/backgrounds/ward_empty.png';
+import hospitalBg from '../assets/images/hospital/hospitalbg.png';
+import bedImgA    from '../assets/images/hospital/bed_w_a.png';       // Elderly man in bed
+import bedImgB    from '../assets/images/hospital/ward_strokepatient.png'; // Young woman on bed
+import bedImgC    from '../assets/images/hospital/sleeping_patient.png';   // Sleeping patient
+import bedImgD    from '../assets/images/hospital/bed.png';                // Empty bed
 
 export class HospitalScene {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private player: Player;
   private patients: Patient[] = [];
-  private obstacles: Obstacle[] = [];
   private keys: { [key: string]: boolean } = {};
   private backgroundImage: HTMLImageElement;
   private backgroundLoaded: boolean = false;
@@ -17,21 +19,34 @@ export class HospitalScene {
   // When false, ALL key input is ignored — prevents E from resetting dialogue
   private isActive: boolean = false;
 
-  private showObstacles: boolean = false; // Set to false to hide obstacles
   private showBedHitboxes: boolean = false; // Set to false to hide bed interaction zones
-  private showMovementBoundary: boolean = false; // Set to false to hide movement boundary
+
+  // ── Bed sprite layout — adjust width/height/offsetX/offsetY per bed ─────────
+  // offsetX/offsetY shift the image relative to the patient's (x, y) anchor point.
+  // The image is drawn so its horizontal centre aligns with patient.x + offsetX,
+  // and its bottom edge sits at patient.y + offsetY.
+  private readonly BED_SPRITES = [
+    { src: bedImgA, width: 450, height: 500, offsetX: 20, offsetY: 300 },  // Bed A
+    { src: bedImgB, width: 480, height: 500, offsetX: -10, offsetY: 300 },  // Bed B
+    { src: bedImgC, width: 480, height: 500, offsetX: -50, offsetY: 300 },  // Bed C
+    { src: bedImgD, width: 480, height: 500, offsetX: -70, offsetY: 300 },  // Bed D
+  ];
+  private bedImages: Array<{ img: HTMLImageElement; loaded: boolean }> = [];
   private get width() { return (this.canvas as any).logicalWidth || this.canvas.width; }
   private get height() { return (this.canvas as any).logicalHeight || this.canvas.height; }
 
+  // Movement bounds for horizontal left-to-right movement
   private movementBounds = {
-    left: 50, right: 850, top: 50, bottom: 850
+    left: 100,
+    right: 1436,
+    verticalY: 340  // Fixed vertical position for horizontal movement
   };
 
   private bedCharacterMap: Record<string, string> = {
-    'Bed 1': 'patient_elderly_man',
-    'Bed 2': 'patient_young_woman',
-    'Bed 3': 'doctor_senior',
-    'Bed 4': 'nurse_colleague',
+    'Bed A': 'patient_elderly_man',
+    'Bed B': 'patient_young_woman',
+    'Bed C': 'doctor_senior',
+    'Bed D': 'nurse_colleague',
   };
 
   // Stable bound references so addEventListener/removeEventListener match
@@ -43,12 +58,20 @@ export class HospitalScene {
     this.ctx    = ctx;
 
     this.backgroundImage     = new Image();
-    this.backgroundImage.src = wardEmptyBg;
+    this.backgroundImage.src = hospitalBg;
     this.backgroundImage.onload = () => { this.backgroundLoaded = true; };
 
-    this.player = new Player(450, 450);
+    // Load per-bed sprites
+    this.bedImages = this.BED_SPRITES.map(cfg => {
+      const entry = { img: new Image(), loaded: false };
+      entry.img.src = cfg.src;
+      entry.img.onload = () => { entry.loaded = true; };
+      return entry;
+    });
+
+    // Start player at left side, middle vertical position
+    this.player = new Player(150, 370);
     this.setupPatients();
-    this.setupObstacles();
 
     this.boundKeyDown = this.onKeyDown.bind(this);
     this.boundKeyUp   = this.onKeyUp.bind(this);
@@ -60,31 +83,20 @@ export class HospitalScene {
   }
 
   private setupPatients(): void {
+    // Beds positioned left to right with equal spacing
+    const bedSpacing = (this.movementBounds.right - this.movementBounds.left) / 4;
+    const startX = this.movementBounds.left + bedSpacing / 2;
+    const yPosition = 300; // Vertical position of beds
+
     this.patients = [
-      new Patient(245, 220, 'Mr. Chen',  'Bed 1'),
-      new Patient(660, 225, 'Mrs. Park', 'Bed 2'),
-      new Patient(245, 675, 'Mr. Liu',   'Bed 3'),
-      new Patient(660, 675, 'Ms. Wong',  'Bed 4'),
+      new Patient(startX + bedSpacing * 0, yPosition, 'Patient A', 'Bed A'),
+      new Patient(startX + bedSpacing * 1, yPosition, 'Patient B', 'Bed B'),
+      new Patient(startX + bedSpacing * 2, yPosition, 'Patient C', 'Bed C'),
+      new Patient(startX + bedSpacing * 3, yPosition, 'Patient D', 'Bed D'),
     ];
   }
 
-  private setupObstacles(): void {
-    this.obstacles = [
-      new Obstacle(245, 200, 150, 160, 'Bed 1'),  // Bed 1
-      new Obstacle(660, 205, 150, 160, 'Bed 2'),  // Bed 2
-      new Obstacle(245, 635, 150, 300, 'Bed 3'),  // Bed 3
-      new Obstacle(660, 635, 150, 300, 'Bed 4'),  // Bed 4
-      new Obstacle(150, 410, 200, 100, 'Left Wall'),      // Left partition wall
-      new Obstacle(750, 410, 200, 100, 'Right Wall'),     // Right partition wall
-      new Obstacle(450, 150, 50, 200, 'Top Wall'),       // Top wall
-      new Obstacle(450, 720, 50, 300, 'Bottom Wall'),    // Bottom wall
-      new Obstacle(370, 130, 100, 100, 'Bed 1 Box'), // Bed 1 Box
-      new Obstacle(770, 130, 100, 100, 'Bed 2 Box'), // Bed 2 Box
-      new Obstacle(130, 680, 100, 100, 'Bed 3 Box'), // Bed 3 Box
-      new Obstacle(770, 540, 100, 100, 'Bed 4 Box'), // Bed 4 Box
-      // Add more obstacles as needed...
-    ];
-  }
+
 
   private onKeyDown(e: KeyboardEvent): void {
     // ← Hard gate: do nothing if hospital is not the active scene
@@ -117,13 +129,23 @@ export class HospitalScene {
     }
   }
 
+  // ── Per-bed interaction zones — one entry per bed (A/B/C/D in order) ─────
+  // hw = half-width (left/right reach), hh = half-height (up/down reach)
+  // ox/oy   = shift the trigger zone from bed centre
+  // promptOx/promptOy = shift the "Press E" label from bed centre
+  private readonly ZONES = [
+    { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: 0, promptOy: -100 },  // Bed A
+    { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: -10, promptOy: -100 },  // Bed B
+    { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: -60, promptOy: -100 },  // Bed C
+    { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: -80, promptOy: -100 },  // Bed D
+  ];
+
   private isPlayerNearHitbox(patient: Patient): boolean {
-    const hw = 240, hh = 280;
+    const i = this.patients.indexOf(patient);
+    const z = this.ZONES[i] ?? this.ZONES[0];
     return (
-      this.player.x >= patient.x - hw / 2 &&
-      this.player.x <= patient.x + hw / 2 &&
-      this.player.y >= patient.y - hh / 2 &&
-      this.player.y <= patient.y + hh / 2
+      Math.abs(this.player.x - (patient.x + z.ox)) < z.hw &&
+      Math.abs(this.player.y - (patient.y + z.oy)) < z.hh
     );
   }
 
@@ -151,23 +173,24 @@ export class HospitalScene {
   public update(): void {
     if (!this.isActive) return;
 
-    const speed = 4;
-    let dx = 0, dy = 0;
+    const speed = 5;
+    let dx = 0;
+    
+    // Horizontal movement only (left-right)
     if (this.keys['ArrowLeft']  || this.keys['a']) dx = -speed;
     if (this.keys['ArrowRight'] || this.keys['d']) dx =  speed;
-    if (this.keys['ArrowUp']    || this.keys['w']) dy = -speed;
-    if (this.keys['ArrowDown']  || this.keys['s']) dy =  speed;
 
-    const oldX = this.player.x;
-    const oldY = this.player.y;
-    this.player.move(dx, dy, this.width, this.height, this.movementBounds);
-    for (const obstacle of this.obstacles) {
-      if (obstacle.contains(this.player.x, this.player.y)) {
-        this.player.x = oldX;
-        this.player.y = oldY;
-        break;
-      }
-    }
+    // Fix vertical position before move so player stays on the horizontal lane
+    this.player.y = this.movementBounds.verticalY;
+
+    // Use player.move() so isMoving and facingLeft are set correctly (needed for walking animation)
+    this.player.move(dx, 0, this.width, this.height, {
+      left:   this.movementBounds.left,
+      right:  this.movementBounds.right,
+      top:    this.movementBounds.verticalY,
+      bottom: this.movementBounds.verticalY,
+    });
+    
     this.player.update();
   }
 
@@ -179,9 +202,8 @@ export class HospitalScene {
       ctx.fillStyle = '#e8e4d8';
       ctx.fillRect(0, 0, this.width, this.height);
     }
+    this.drawBedSprites();
     this.drawBedHitboxes();
-    this.drawMovementBoundary();
-    for (const obstacle of this.obstacles) obstacle.render(ctx, this.showObstacles);
     for (const patient of this.patients) {
       if (this.isPlayerNearHitbox(patient)) this.drawInteractionPrompt(patient);
     }
@@ -189,67 +211,65 @@ export class HospitalScene {
     this.drawUI();
   }
 
+  private drawBedSprites(): void {
+    const ctx = this.ctx;
+    this.patients.forEach((patient, i) => {
+      const cfg   = this.BED_SPRITES[i];
+      const entry = this.bedImages[i];
+      if (!cfg || !entry?.loaded) return;
+      const drawX = patient.x + cfg.offsetX - cfg.width  / 2;
+      const drawY = patient.y + cfg.offsetY - cfg.height;
+      ctx.drawImage(entry.img, drawX, drawY, cfg.width, cfg.height);
+    });
+  }
+
   private drawBedHitboxes(): void {
     if (!this.showBedHitboxes) return; // Skip if disabled
     
     const ctx = this.ctx;
-    for (const patient of this.patients) {
-      const hw = 220, hh = 280;
-      const hx = patient.x - hw / 2, hy = patient.y - hh / 2;
+    this.patients.forEach((patient, i) => {
+      const { hw, hh, ox, oy } = this.ZONES[i] ?? this.ZONES[0];
+      const cx = patient.x + ox, cy = patient.y + oy;
+      const hx = cx - hw, hy = cy - hh;
       ctx.fillStyle   = 'rgba(255,0,0,0.3)';
-      ctx.fillRect(hx, hy, hw, hh);
+      ctx.fillRect(hx, hy, hw * 2, hh * 2);
       ctx.strokeStyle = 'rgba(255,0,0,0.8)';
       ctx.lineWidth   = 2;
-      ctx.strokeRect(hx, hy, hw, hh);
+      ctx.strokeRect(hx, hy, hw * 2, hh * 2);
       ctx.fillStyle   = 'rgba(0,0,0,0.7)';
       ctx.font        = '12px Arial';
       ctx.textAlign   = 'center';
-      ctx.fillText(patient.location, patient.x, hy - 5);
-    }
+      ctx.fillText(patient.location, cx, hy - 5);
+    });
   }
 
-  private drawMovementBoundary(): void {
-    if (!this.showMovementBoundary) return; // Skip if disabled
-    
-    const ctx = this.ctx;
-    const bw  = this.movementBounds.right  - this.movementBounds.left;
-    const bh  = this.movementBounds.bottom - this.movementBounds.top;
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(0, 0, this.width, this.movementBounds.top);
-    ctx.fillRect(0, this.movementBounds.bottom, this.width, this.height - this.movementBounds.bottom);
-    ctx.fillRect(0, this.movementBounds.top, this.movementBounds.left, bh);
-    ctx.fillRect(this.movementBounds.right, this.movementBounds.top, this.width - this.movementBounds.right, bh);
-    ctx.strokeStyle = 'rgba(0,255,0,0.8)';
-    ctx.lineWidth   = 3;
-    ctx.strokeRect(this.movementBounds.left, this.movementBounds.top, bw, bh);
-    const m = 10;
-    ctx.fillStyle = 'rgba(0,255,0,0.9)';
-    ctx.fillRect(this.movementBounds.left  - 2,     this.movementBounds.top    - 2,     m, m);
-    ctx.fillRect(this.movementBounds.right - m + 2, this.movementBounds.top    - 2,     m, m);
-    ctx.fillRect(this.movementBounds.left  - 2,     this.movementBounds.bottom - m + 2, m, m);
-    ctx.fillRect(this.movementBounds.right - m + 2, this.movementBounds.bottom - m + 2, m, m);
-  }
+
 
   private drawInteractionPrompt(patient: Patient): void {
     const ctx = this.ctx;
-    const hh  = 270;
-    const hy  = patient.y - hh / 2;
+    const i = this.patients.indexOf(patient);
+    const { promptOx, promptOy } = this.ZONES[i] ?? this.ZONES[0];
+    const px = patient.x + promptOx;
+    const py = patient.y + promptOy;
+
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(patient.x - 40, hy - 35, 80, 25);
+    ctx.fillRect(px - 40, py, 80, 25);
     ctx.fillStyle = '#ffffff';
     ctx.font      = '14px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Press E', patient.x, hy - 15);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Press E', px, py + 12.5);
   }
 
   private drawUI(): void {
     const ctx = this.ctx;
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(10, this.height - 50, 250, 40);
+    ctx.fillRect(10, this.height - 63, 250, 50);
     ctx.fillStyle = '#ffffff';
     ctx.font      = '14px Arial';
     ctx.textAlign = 'left';
-    ctx.fillText('WASD / Arrow Keys: Move',   20, this.height - 25);
-    ctx.fillText('E: Interact with patients', 20, this.height - 10);
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('A/D or ← →: Move Left/Right', 20, this.height - 45);
+    ctx.fillText('E: Interact with patients',   20, this.height - 25);
   }
 }

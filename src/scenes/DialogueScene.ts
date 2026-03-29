@@ -6,7 +6,7 @@ import patientAHappy   from '../assets/images/characters/patient_a/patient_a_hap
 import patientASad     from '../assets/images/characters/patient_a/patient_a_sad.png';
 import patientANeutral from '../assets/images/characters/patient_a/patient_a_neutral.png';
 import patientBHappy   from '../assets/images/characters/stroke_patient/stroke_patient.png';
-import hospitalWardBg  from '../assets/images/backgrounds/hospital_ward.png';
+import hospitalWardBg  from '../assets/images/hospital/hospitalbg.png';
 import mrTanScript     from '../assets/dialouge/mr_tan.json';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -26,6 +26,7 @@ interface CharacterConfig {
   defaultExpression: Expression;
   stripBg: BgStrip;
   scriptKey: string;
+  talkSound?: string;      // Character's talking blip sound
 }
 
 interface DialogueOption {
@@ -33,16 +34,23 @@ interface DialogueOption {
   response: string;
   responseExpression: Expression;
   next: string;
+  musicTrack?: string;     // Optional: Change music when this option is chosen
 }
 
 interface DialogueNode {
   text: string;
   expression: Expression;
   options: DialogueOption[];
+  musicTrack?: string;     // Optional: Music for this node
 }
 
 interface DialogueTree {
-  [nodeKey: string]: DialogueNode;
+  metadata?: {
+    id?: string;
+    title?: string;
+    defaultMusic?: string;  // Default background music for this story
+  };
+  [nodeKey: string]: DialogueNode | any; // 'any' for metadata
 }
 
 type SceneState = 'FADE_IN' | 'TALKING' | 'WAITING' | 'CHOOSING' | 'RESPONSE' | 'FADE_OUT';
@@ -73,6 +81,7 @@ const CHARACTERS: Record<string, CharacterConfig> = {
     defaultExpression: 'neutral',
     stripBg: 'black',
     scriptKey: 'mr_tan',
+    talkSound: '/src/assets/audio/voices/elderly_male_blip.mp3',
   },
   patient_young_woman: {
     id: 'patient_young_woman',
@@ -88,6 +97,7 @@ const CHARACTERS: Record<string, CharacterConfig> = {
     defaultExpression: 'happy',
     stripBg: 'white',
     scriptKey: 'mr_tan',
+    talkSound: '/src/assets/audio/voices/female_blip.mp3',
   },
   doctor_senior: {
     id: 'doctor_senior',
@@ -103,6 +113,7 @@ const CHARACTERS: Record<string, CharacterConfig> = {
     defaultExpression: 'neutral',
     stripBg: 'black',
     scriptKey: 'mr_tan',
+    talkSound: '/src/assets/audio/voices/doctor_male_blip.mp3',
   },
   nurse_colleague: {
     id: 'nurse_colleague',
@@ -118,6 +129,7 @@ const CHARACTERS: Record<string, CharacterConfig> = {
     defaultExpression: 'happy',
     stripBg: 'white',
     scriptKey: 'mr_tan',
+    talkSound: '/src/assets/audio/voices/nurse_female_blip.mp3',
   },
   family_son: {
     id: 'family_son',
@@ -133,6 +145,7 @@ const CHARACTERS: Record<string, CharacterConfig> = {
     defaultExpression: 'neutral',
     stripBg: 'black',
     scriptKey: 'mr_tan',
+    talkSound: '/src/assets/audio/voices/young_male_blip.mp3',
   },
 };
 
@@ -201,6 +214,13 @@ export class DialogueScene {
   private currentNode!: DialogueNode;
 
   private imageCache = new Map<string, CharacterImages>();
+
+  // Audio
+  private backgroundMusic: HTMLAudioElement | null = null;
+  private talkSound: HTMLAudioElement | null = null;
+  private audioCache = new Map<string, HTMLAudioElement>();
+  private readonly TALK_SOUND_INTERVAL = 3; // Play sound every N characters
+  private talkSoundCounter = 0;
 
   // Typewriter
   private displayedText   = '';
@@ -274,6 +294,12 @@ export class DialogueScene {
     }
     this.images = this.imageCache.get(characterId)!;
 
+    // Load character audio (voice blip)
+    this.loadCharacterAudio(char);
+    
+    // Load and play story music
+    this.loadStoryMusic();
+
     if (this.boundKeyDown) window.removeEventListener('keydown', this.boundKeyDown);
     this.boundKeyDown = this.handleKeyDown.bind(this);
     window.addEventListener('keydown', this.boundKeyDown);
@@ -329,6 +355,7 @@ export class DialogueScene {
 
   public cleanup(): void {
     if (this.boundKeyDown) window.removeEventListener('keydown', this.boundKeyDown);
+    this.stopAudio();
   }
 
   // ── Sprite ─────────────────────────────────────────────────────────────────
@@ -387,6 +414,13 @@ export class DialogueScene {
     while (this.typewriterTimer >= this.TYPEWRITER_SPEED && this.typewriterIndex < this.fullText.length) {
       this.typewriterTimer -= this.TYPEWRITER_SPEED;
       this.displayedText  += this.fullText[this.typewriterIndex++];
+      
+      // Play talk sound every N characters
+      this.talkSoundCounter++;
+      if (this.talkSoundCounter >= this.TALK_SOUND_INTERVAL) {
+        this.talkSoundCounter = 0;
+        this.playTalkSound();
+      }
     }
     if (this.typewriterIndex >= this.fullText.length) {
       this.isTyping      = false;
@@ -482,6 +516,11 @@ export class DialogueScene {
       this.state = 'FADE_OUT'; this.fadeElapsed = 0; return;
     }
 
+    // Change music if option specifies a track
+    if (option.musicTrack) {
+      this.changeMusic(option.musicTrack);
+    }
+
     this.pendingExpression = option.responseExpression;
     this.pendingNextNode   = option.next;
 
@@ -501,6 +540,12 @@ export class DialogueScene {
       this.state = 'FADE_OUT'; this.fadeElapsed = 0; return;
     }
     console.log(`[DialogueScene] Node: "${key}"`);
+    
+    // Change music if node specifies a track
+    if (next.musicTrack) {
+      this.changeMusic(next.musicTrack);
+    }
+    
     this.currentNode     = next;
     this.pendingNextNode = null;
     this.selectedChoice  = 0;
@@ -628,5 +673,84 @@ export class DialogueScene {
   private measureStr(text: string, size: number, weight: number): number {
     this.ctx.font = `${weight} ${size}px "Segoe UI", sans-serif`;
     return this.ctx.measureText(text).width;
+  }
+
+  // ── Audio ──────────────────────────────────────────────────────────────────
+
+  private loadCharacterAudio(char: CharacterConfig): void {
+    // Load talk sound
+    if (char.talkSound) {
+      if (!this.audioCache.has(char.talkSound)) {
+        const audio = new Audio();
+        audio.src = char.talkSound;
+        audio.volume = 0.5; // Adjust volume as needed
+        this.audioCache.set(char.talkSound, audio);
+        
+        audio.onerror = () => {
+          console.warn(`[DialogueScene] Talk sound not found: ${char.talkSound}`);
+        };
+      }
+      this.talkSound = this.audioCache.get(char.talkSound)!;
+    }
+  }
+
+  private loadStoryMusic(): void {
+    // Check for default music in tree metadata
+    const defaultMusic = this.tree.metadata?.defaultMusic;
+    if (defaultMusic) {
+      this.changeMusic(defaultMusic);
+    }
+    
+    // Check for music in the current node
+    const nodeMusic = this.currentNode.musicTrack;
+    if (nodeMusic) {
+      this.changeMusic(nodeMusic);
+    }
+  }
+
+  private changeMusic(musicPath: string): void {
+    // Stop current music if playing
+    if (this.backgroundMusic) {
+      this.backgroundMusic.pause();
+      this.backgroundMusic.currentTime = 0;
+    }
+
+    // Load and play new music
+    if (!this.audioCache.has(musicPath)) {
+      const audio = new Audio();
+      audio.src = musicPath;
+      audio.loop = true;
+      audio.volume = 0.3; // Adjust volume as needed
+      this.audioCache.set(musicPath, audio);
+      
+      audio.onerror = () => {
+        console.warn(`[DialogueScene] Background music not found: ${musicPath}`);
+      };
+    }
+    
+    this.backgroundMusic = this.audioCache.get(musicPath)!;
+    
+    // Play music (will fail silently if file doesn't exist)
+    this.backgroundMusic.play().catch(err => {
+      console.warn('[DialogueScene] Could not play background music:', err.message);
+    });
+  }
+
+  private playTalkSound(): void {
+    if (this.talkSound) {
+      // Clone and play to allow overlapping sounds
+      const sound = this.talkSound.cloneNode() as HTMLAudioElement;
+      sound.volume = this.talkSound.volume;
+      sound.play().catch(() => {
+        // Silently fail if audio can't play (file doesn't exist)
+      });
+    }
+  }
+
+  private stopAudio(): void {
+    if (this.backgroundMusic) {
+      this.backgroundMusic.pause();
+      this.backgroundMusic.currentTime = 0;
+    }
   }
 }

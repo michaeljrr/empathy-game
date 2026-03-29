@@ -4,6 +4,8 @@ import { DialogueScene } from '../scenes/DialogueScene';
 
 type SceneType = 'entry' | 'hospital' | 'dialogue';
 
+type FadeState = 'none' | 'out' | 'in';
+
 export class Game {
   private canvas: HTMLCanvasElement;
   private ctx:    CanvasRenderingContext2D;
@@ -15,6 +17,12 @@ export class Game {
   };
 
   private lastTimestamp: number = 0;
+
+  // ── Fade transition ───────────────────────────────────────
+  private fadeAlpha:   number    = 0;
+  private fadeState:   FadeState = 'none';
+  private pendingScene: { scene: SceneType; characterId?: string } | null = null;
+  private readonly FADE_SPEED = 0.05; // alpha change per frame (~20 frames = 333ms at 60fps)
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -40,35 +48,35 @@ export class Game {
         characterId?: string;
       };
 
-      // ── Leave current scene ───────────────────────────────────────────────
-      switch (this.currentScene) {
-        case 'hospital':
-          // Deactivate BEFORE switching — blocks E from reaching checkInteraction
-          this.scenes.hospital.deactivate();
-          break;
-        case 'dialogue':
-          this.scenes.dialogue.cleanup();
-          break;
-      }
-
-      this.currentScene = scene;
-
-      // ── Enter new scene ───────────────────────────────────────────────────
-      switch (scene) {
-        case 'hospital':
-          // Re-activate so keys work again
-          this.scenes.hospital.activate();
-          break;
-        case 'dialogue':
-          if (!characterId) {
-            console.error('Game: missing characterId for dialogue scene');
-            return;
-          }
-          this.scenes.dialogue.init(characterId);
-          break;
-      }
+      // Begin fade-out; actual scene switch happens at peak black
+      this.pendingScene = { scene, characterId };
+      this.fadeAlpha    = 0;
+      this.fadeState    = 'out';
 
     }) as EventListener);
+  }
+
+  private applySceneSwitch(pending: { scene: SceneType; characterId?: string }): void {
+    const { scene, characterId } = pending;
+
+    // Leave current scene
+    switch (this.currentScene) {
+      case 'hospital': this.scenes.hospital.deactivate(); break;
+      case 'dialogue': this.scenes.dialogue.cleanup();    break;
+    }
+
+    this.currentScene = scene;
+
+    // Enter new scene
+    switch (scene) {
+      case 'hospital':
+        this.scenes.hospital.activate();
+        break;
+      case 'dialogue':
+        if (!characterId) { console.error('Game: missing characterId for dialogue scene'); return; }
+        this.scenes.dialogue.init(characterId);
+        break;
+    }
   }
 
   private startGameLoop(): void {
@@ -83,6 +91,19 @@ export class Game {
   }
 
   private update(delta: number): void {
+    // Tick fade
+    if (this.fadeState === 'out') {
+      this.fadeAlpha = Math.min(1, this.fadeAlpha + this.FADE_SPEED);
+      if (this.fadeAlpha >= 1 && this.pendingScene) {
+        this.applySceneSwitch(this.pendingScene);
+        this.pendingScene = null;
+        this.fadeState    = 'in';
+      }
+    } else if (this.fadeState === 'in') {
+      this.fadeAlpha = Math.max(0, this.fadeAlpha - this.FADE_SPEED);
+      if (this.fadeAlpha <= 0) this.fadeState = 'none';
+    }
+
     switch (this.currentScene) {
       case 'entry':    this.scenes.entry.update();         break;
       case 'hospital': this.scenes.hospital.update();      break;
@@ -99,6 +120,14 @@ export class Game {
       case 'entry':    this.scenes.entry.render();    break;
       case 'hospital': this.scenes.hospital.render(); break;
       case 'dialogue': this.scenes.dialogue.render(); break;
+    }
+
+    // Draw fade overlay on top of everything
+    if (this.fadeState !== 'none' && this.fadeAlpha > 0) {
+      this.ctx.globalAlpha = this.fadeAlpha;
+      this.ctx.fillStyle   = '#000000';
+      this.ctx.fillRect(0, 0, width, height);
+      this.ctx.globalAlpha = 1;
     }
   }
 }
