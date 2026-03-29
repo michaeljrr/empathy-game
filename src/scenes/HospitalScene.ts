@@ -885,7 +885,7 @@ export class HospitalScene {
     
     // Accent color for nurse (player)
     const accentColor = '#3498db';
-    const speakerName = 'Lylia';
+    const speakerName = localStorage.getItem('playerName') || 'Nurse';
     const text = "Hmm… I wonder why the bed's empty.";
     
     // Panel (dark semi-transparent background)
