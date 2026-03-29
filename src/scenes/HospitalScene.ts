@@ -26,10 +26,10 @@ export class HospitalScene {
   // The image is drawn so its horizontal centre aligns with patient.x + offsetX,
   // and its bottom edge sits at patient.y + offsetY.
   private readonly BED_SPRITES = [
-    { src: bedImgA, width: 450, height: 500, offsetX: 20, offsetY: 300 },  // Bed A
-    { src: bedImgB, width: 480, height: 500, offsetX: -10, offsetY: 300 },  // Bed B
-    { src: bedImgC, width: 480, height: 500, offsetX: -50, offsetY: 300 },  // Bed C
-    { src: bedImgD, width: 480, height: 500, offsetX: -70, offsetY: 300 },  // Bed D
+    { src: bedImgA, width: 480, height: 500, offsetX: 20, offsetY: 340 },  // Bed A
+    { src: bedImgB, width: 480, height: 500, offsetX: -10, offsetY: 340 },  // Bed B
+    { src: bedImgC, width: 480, height: 500, offsetX: -50, offsetY: 340 },  // Bed C
+    { src: bedImgD, width: 480, height: 500, offsetX: -70, offsetY: 340 },  // Bed D
   ];
   private bedImages: Array<{ img: HTMLImageElement; loaded: boolean }> = [];
   private get width() { return (this.canvas as any).logicalWidth || this.canvas.width; }
@@ -133,16 +133,18 @@ export class HospitalScene {
   // hw = half-width (left/right reach), hh = half-height (up/down reach)
   // ox/oy   = shift the trigger zone from bed centre
   // promptOx/promptOy = shift the "Press E" label from bed centre
+  // enabled = false disables the interaction zone entirely for that bed
   private readonly ZONES = [
-    { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: 0, promptOy: -100 },  // Bed A
-    { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: -10, promptOy: -100 },  // Bed B
-    { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: -60, promptOy: -100 },  // Bed C
-    { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: -80, promptOy: -100 },  // Bed D
+    { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: 0, promptOy: -100, enabled: true  },  // Bed A
+    { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: -10, promptOy: -100, enabled: true  },  // Bed B
+    { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: -60, promptOy: -100, enabled: true  },  // Bed C
+    { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: -80, promptOy: -100, enabled: false },  // Bed D
   ];
 
   private isPlayerNearHitbox(patient: Patient): boolean {
     const i = this.patients.indexOf(patient);
     const z = this.ZONES[i] ?? this.ZONES[0];
+    if (!z.enabled) return false;
     return (
       Math.abs(this.player.x - (patient.x + z.ox)) < z.hw &&
       Math.abs(this.player.y - (patient.y + z.oy)) < z.hh
@@ -228,18 +230,20 @@ export class HospitalScene {
     
     const ctx = this.ctx;
     this.patients.forEach((patient, i) => {
-      const { hw, hh, ox, oy } = this.ZONES[i] ?? this.ZONES[0];
+      const z = this.ZONES[i] ?? this.ZONES[0];
+      const { hw, hh, ox, oy, enabled } = z;
       const cx = patient.x + ox, cy = patient.y + oy;
       const hx = cx - hw, hy = cy - hh;
-      ctx.fillStyle   = 'rgba(255,0,0,0.3)';
+      // Disabled zones shown in grey so you can still see them while debugging
+      ctx.fillStyle   = enabled ? 'rgba(255,0,0,0.3)' : 'rgba(120,120,120,0.2)';
       ctx.fillRect(hx, hy, hw * 2, hh * 2);
-      ctx.strokeStyle = 'rgba(255,0,0,0.8)';
+      ctx.strokeStyle = enabled ? 'rgba(255,0,0,0.8)' : 'rgba(120,120,120,0.5)';
       ctx.lineWidth   = 2;
       ctx.strokeRect(hx, hy, hw * 2, hh * 2);
       ctx.fillStyle   = 'rgba(0,0,0,0.7)';
       ctx.font        = '12px Arial';
       ctx.textAlign   = 'center';
-      ctx.fillText(patient.location, cx, hy - 5);
+      ctx.fillText(enabled ? patient.location : `${patient.location} (disabled)`, cx, hy - 5);
     });
   }
 

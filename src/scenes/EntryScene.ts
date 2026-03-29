@@ -83,7 +83,7 @@ export class EntryScene {
     const { x, y } = this.getCanvasCoordinates(e);
     if (this.isPointInButton(x, y)) {
       this.clickFlash = 10;
-      window.dispatchEvent(new CustomEvent('sceneChange', { detail: { scene: 'hospital' } }));
+      window.dispatchEvent(new CustomEvent('sceneChange', { detail: { scene: 'intro' } }));
     }
   }
 

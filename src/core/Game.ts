@@ -1,8 +1,9 @@
 import { EntryScene }    from '../scenes/EntryScene';
+import { IntroScene }    from '../scenes/IntroScene';
 import { HospitalScene } from '../scenes/HospitalScene';
 import { DialogueScene } from '../scenes/DialogueScene';
 
-type SceneType = 'entry' | 'hospital' | 'dialogue';
+type SceneType = 'entry' | 'intro' | 'hospital' | 'dialogue';
 
 type FadeState = 'none' | 'out' | 'in';
 
@@ -12,6 +13,7 @@ export class Game {
   private currentScene: SceneType = 'entry';
   private scenes: {
     entry:    EntryScene;
+    intro:    IntroScene;
     hospital: HospitalScene;
     dialogue: DialogueScene;
   };
@@ -30,6 +32,7 @@ export class Game {
 
     this.scenes = {
       entry:    new EntryScene(this.canvas, this.ctx),
+      intro:    new IntroScene(this.canvas, this.ctx),
       hospital: new HospitalScene(this.canvas, this.ctx),
       dialogue: new DialogueScene(this.canvas, this.ctx),
     };
@@ -61,6 +64,7 @@ export class Game {
 
     // Leave current scene
     switch (this.currentScene) {
+      case 'intro':    this.scenes.intro.deactivate();    break;
       case 'hospital': this.scenes.hospital.deactivate(); break;
       case 'dialogue': this.scenes.dialogue.cleanup();    break;
     }
@@ -69,6 +73,9 @@ export class Game {
 
     // Enter new scene
     switch (scene) {
+      case 'intro':
+        this.scenes.intro.activate();
+        break;
       case 'hospital':
         this.scenes.hospital.activate();
         break;
@@ -106,6 +113,7 @@ export class Game {
 
     switch (this.currentScene) {
       case 'entry':    this.scenes.entry.update();         break;
+      case 'intro':    this.scenes.intro.update(delta);    break;
       case 'hospital': this.scenes.hospital.update();      break;
       case 'dialogue': this.scenes.dialogue.update(delta); break;
     }
@@ -118,6 +126,7 @@ export class Game {
 
     switch (this.currentScene) {
       case 'entry':    this.scenes.entry.render();    break;
+      case 'intro':    this.scenes.intro.render();    break;
       case 'hospital': this.scenes.hospital.render(); break;
       case 'dialogue': this.scenes.dialogue.render(); break;
     }
