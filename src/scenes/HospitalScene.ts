@@ -1,11 +1,10 @@
 import { Player } from '../entities/Player';
 import { Patient } from '../entities/Patient';
-import hospitalBg from '../assets/images/hospital/hospitalbg.png';
-import bedImgA    from '../assets/images/hospital/bed_w_a.png';       // Elderly man in bed
-import bedImgB    from '../assets/images/hospital/ward_strokepatient.png'; // Young woman on bed
-import bedImgC    from '../assets/images/hospital/sleeping_patient.png';   // Sleeping patient
-import bedImgD    from '../assets/images/hospital/bed.png';                // Empty bed
-
+import wardEmptyBg from '../assets/images/hospital/hospitalbg.png';
+import patientA_in_bed from '../assets/images/hospital/patientA_in_bed.png';
+import patientB_in_bed from '../assets/images/hospital/patientB_in_bed.png';
+import patientC_in_bed from '../assets/images/hospital/patientC_in_bed.png';
+import bed from '../assets/images/hospital/bed.png';
 export class HospitalScene {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -14,6 +13,14 @@ export class HospitalScene {
   private keys: { [key: string]: boolean } = {};
   private backgroundImage: HTMLImageElement;
   private backgroundLoaded: boolean = false;
+  private patientAElement: HTMLImageElement;
+  private patientALoaded: boolean = false;
+  private patientBElement: HTMLImageElement;
+  private patientBLoaded: boolean = false;
+  private patientCElement: HTMLImageElement;
+  private patientCLoaded: boolean = false;
+  private patientDElement: HTMLImageElement;
+  private patientDLoaded: boolean = false;
 
   // ── Whether this scene is the active one ─────────────────────────────────
   // When false, ALL key input is ignored — prevents E from resetting dialogue
@@ -37,16 +44,14 @@ export class HospitalScene {
 
   // Movement bounds for horizontal left-to-right movement
   private movementBounds = {
-    left: 100,
-    right: 1436,
-    verticalY: 340  // Fixed vertical position for horizontal movement
+    left: 0, right: 1600, top: 400, bottom: 880
   };
 
   private bedCharacterMap: Record<string, string> = {
-    'Bed A': 'patient_elderly_man',
-    'Bed B': 'patient_young_woman',
-    'Bed C': 'doctor_senior',
-    'Bed D': 'nurse_colleague',
+    'Bed 1': 'day1patientA',
+    'Bed 2': 'day1patientB',
+    'Bed 3': 'doctor_senior',
+    'Bed 4': 'nurse_colleague',
   };
 
   // Stable bound references so addEventListener/removeEventListener match
@@ -58,19 +63,24 @@ export class HospitalScene {
     this.ctx    = ctx;
 
     this.backgroundImage     = new Image();
-    this.backgroundImage.src = hospitalBg;
+    this.backgroundImage.src = wardEmptyBg;
     this.backgroundImage.onload = () => { this.backgroundLoaded = true; };
 
-    // Load per-bed sprites
-    this.bedImages = this.BED_SPRITES.map(cfg => {
-      const entry = { img: new Image(), loaded: false };
-      entry.img.src = cfg.src;
-      entry.img.onload = () => { entry.loaded = true; };
-      return entry;
-    });
+    this.patientAElement     = new Image();
+    this.patientBElement     = new Image();
+    this.patientCElement     = new Image();
+    this.patientDElement     = new Image();
 
-    // Start player at left side, middle vertical position
-    this.player = new Player(150, 370);
+    this.player = new Player(800, 680);
+    
+    // Set up Day 1 beds
+    this.setBedDay(
+      { image: patientA_in_bed, characterId: 'day1patientA' },
+      { image: patientB_in_bed, characterId: 'day1patientB' },
+      { image: patientC_in_bed, characterId: 'doctor_senior' },
+      { image: bed }
+    );
+    
     this.setupPatients();
 
     this.boundKeyDown = this.onKeyDown.bind(this);
@@ -82,17 +92,61 @@ export class HospitalScene {
     window.addEventListener('keyup',   this.boundKeyUp);
   }
 
-  private setupPatients(): void {
-    // Beds positioned left to right with equal spacing
-    const bedSpacing = (this.movementBounds.right - this.movementBounds.left) / 4;
-    const startX = this.movementBounds.left + bedSpacing / 2;
-    const yPosition = 300; // Vertical position of beds
+  public setBedImages(patientAImg?: string, patientBImg?: string, patientCImg?: string, patientDImg?: string): void {
+    if (patientAImg) {
+      this.patientAElement.src = patientAImg;
+      this.patientAElement.onload = () => { this.patientALoaded = true; };
+    } else {
+      this.patientALoaded = false;
+    }
+    
+    if (patientBImg) {
+      this.patientBElement.src = patientBImg;
+      this.patientBElement.onload = () => { this.patientBLoaded = true; };
+    } else {
+      this.patientBLoaded = false;
+    }
+    
+    if (patientCImg) {
+      this.patientCElement.src = patientCImg;
+      this.patientCElement.onload = () => { this.patientCLoaded = true; };
+    } else {
+      this.patientCLoaded = false;
+    }
+    
+    if (patientDImg) {
+      this.patientDElement.src = patientDImg;
+      this.patientDElement.onload = () => { this.patientDLoaded = true; };
+    } else {
+      this.patientDLoaded = false;
+    }
+  }
 
+  public  setBedDay(
+    bedA?: { image?: string; characterId?: string },
+    bedB?: { image?: string; characterId?: string },
+    bedC?: { image?: string; characterId?: string },
+    bedD?: { image?: string; characterId?: string },
+    bedE?: { image?: string; characterId?: string }
+  ): void {
+    // Set images
+    this.setBedImages(bedA?.image, bedB?.image, bedC?.image, bedD?.image);
+    
+    // Update bedCharacterMap - only include beds with patients
+    this.bedCharacterMap = {};
+    if (bedA?.characterId) this.bedCharacterMap['Bed 1'] = bedA.characterId;
+    if (bedB?.characterId) this.bedCharacterMap['Bed 2'] = bedB.characterId;
+    if (bedC?.characterId) this.bedCharacterMap['Bed 3'] = bedC.characterId;
+    if (bedD?.characterId) this.bedCharacterMap['Bed 4'] = bedD.characterId;
+    if (bedE?.characterId) this.bedCharacterMap['Bed 5'] = bedE.characterId;
+  }
+
+  private setupPatients(): void {
     this.patients = [
-      new Patient(startX + bedSpacing * 0, yPosition, 'Patient A', 'Bed A'),
-      new Patient(startX + bedSpacing * 1, yPosition, 'Patient B', 'Bed B'),
-      new Patient(startX + bedSpacing * 2, yPosition, 'Patient C', 'Bed C'),
-      new Patient(startX + bedSpacing * 3, yPosition, 'Patient D', 'Bed D'),
+      new Patient(325, 680, 'Mr. Chen',  'Bed 1'),
+      new Patient(625, 680, 'Mrs. Park', 'Bed 2'),
+      new Patient(925, 680, 'Mr. Liu',   'Bed 3'),
+      new Patient(1225, 680, 'Ms. Wong',  'Bed 4'),
     ];
   }
 
@@ -181,17 +235,9 @@ export class HospitalScene {
     // Horizontal movement only (left-right)
     if (this.keys['ArrowLeft']  || this.keys['a']) dx = -speed;
     if (this.keys['ArrowRight'] || this.keys['d']) dx =  speed;
+    // Vertical movement disabled - only left/right allowed
 
-    // Fix vertical position before move so player stays on the horizontal lane
-    this.player.y = this.movementBounds.verticalY;
-
-    // Use player.move() so isMoving and facingLeft are set correctly (needed for walking animation)
-    this.player.move(dx, 0, this.width, this.height, {
-      left:   this.movementBounds.left,
-      right:  this.movementBounds.right,
-      top:    this.movementBounds.verticalY,
-      bottom: this.movementBounds.verticalY,
-    });
+    this.player.move(dx, 0, this.width, this.height, this.movementBounds);
     
     this.player.update();
   }
@@ -204,26 +250,27 @@ export class HospitalScene {
       ctx.fillStyle = '#e8e4d8';
       ctx.fillRect(0, 0, this.width, this.height);
     }
-    this.drawBedSprites();
+    if (this.patientALoaded) {
+      ctx.drawImage(this.patientAElement, 0, 100, 650, 812);
+    }
+    if (this.patientBLoaded) {
+      ctx.drawImage(this.patientBElement, 300, 100, 650, 812);
+    }
+    if (this.patientCLoaded) {
+      ctx.drawImage(this.patientCElement, 600, 100, 650, 812);
+    }
+    if (this.patientDLoaded) {
+      ctx.drawImage(this.patientDElement, 900, 100, 650, 812);
+    }
+    this.drawBedShadows();
     this.drawBedHitboxes();
     for (const patient of this.patients) {
-      if (this.isPlayerNearHitbox(patient)) this.drawInteractionPrompt(patient);
+      if (this.isPlayerNearHitbox(patient) && this.bedCharacterMap[patient.location]) this.drawInteractionPrompt(patient);
     }
     this.player.render(ctx);
     this.drawUI();
   }
 
-  private drawBedSprites(): void {
-    const ctx = this.ctx;
-    this.patients.forEach((patient, i) => {
-      const cfg   = this.BED_SPRITES[i];
-      const entry = this.bedImages[i];
-      if (!cfg || !entry?.loaded) return;
-      const drawX = patient.x + cfg.offsetX - cfg.width  / 2;
-      const drawY = patient.y + cfg.offsetY - cfg.height;
-      ctx.drawImage(entry.img, drawX, drawY, cfg.width, cfg.height);
-    });
-  }
 
   private drawBedHitboxes(): void {
     if (!this.showBedHitboxes) return; // Skip if disabled
@@ -247,33 +294,72 @@ export class HospitalScene {
     });
   }
 
+  private drawBedShadows(): void {
+    const ctx = this.ctx;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
 
+    // PatientA bed 
+    ctx.beginPath();
+    ctx.ellipse(300, 800, 130, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // PatientB bed 
+    ctx.beginPath();
+    ctx.ellipse(600, 800, 130, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // PatientC bed 
+    ctx.beginPath();
+    ctx.ellipse(900, 800, 130, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // PatientD bed 
+    ctx.beginPath();
+    ctx.ellipse(1200, 800, 130, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  private drawMovementBoundary(): void {
+    if (!this.showMovementBoundary) return; // Skip if disabled
+    
+    const ctx = this.ctx;
+    const bw  = this.movementBounds.right  - this.movementBounds.left;
+    const bh  = this.movementBounds.bottom - this.movementBounds.top;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(0, 0, this.width, this.movementBounds.top);
+    ctx.fillRect(0, this.movementBounds.bottom, this.width, this.height - this.movementBounds.bottom);
+    ctx.fillRect(0, this.movementBounds.top, this.movementBounds.left, bh);
+    ctx.fillRect(this.movementBounds.right, this.movementBounds.top, this.width - this.movementBounds.right, bh);
+    ctx.strokeStyle = 'rgba(0,255,0,0.8)';
+    ctx.lineWidth   = 3;
+    ctx.strokeRect(this.movementBounds.left, this.movementBounds.top, bw, bh);
+    const m = 10;
+    ctx.fillStyle = 'rgba(0,255,0,0.9)';
+    ctx.fillRect(this.movementBounds.left  - 2,     this.movementBounds.top    - 2,     m, m);
+    ctx.fillRect(this.movementBounds.right - m + 2, this.movementBounds.top    - 2,     m, m);
+    ctx.fillRect(this.movementBounds.left  - 2,     this.movementBounds.bottom - m + 2, m, m);
+    ctx.fillRect(this.movementBounds.right - m + 2, this.movementBounds.bottom - m + 2, m, m);
+  }
 
   private drawInteractionPrompt(patient: Patient): void {
     const ctx = this.ctx;
-    const i = this.patients.indexOf(patient);
-    const { promptOx, promptOy } = this.ZONES[i] ?? this.ZONES[0];
-    const px = patient.x + promptOx;
-    const py = patient.y + promptOy;
-
+    const promptY = patient.y - 100; // Position 100px above the patient
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(px - 40, py, 80, 25);
+    ctx.fillRect(patient.x - 40, promptY - 12, 80, 25);
     ctx.fillStyle = '#ffffff';
     ctx.font      = '14px Arial';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Press E', px, py + 12.5);
+    ctx.fillText('Press E', patient.x, promptY + 5);
   }
 
   private drawUI(): void {
     const ctx = this.ctx;
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(10, this.height - 63, 250, 50);
+    ctx.fillRect(this.width - 260, this.height - 90, 250, 90);
     ctx.fillStyle = '#ffffff';
     ctx.font      = '14px Arial';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText('A/D or ← →: Move Left/Right', 20, this.height - 45);
-    ctx.fillText('E: Interact with patients',   20, this.height - 25);
+    ctx.textAlign = 'right';
+    ctx.fillText('A/D or ← →: Move',  this.width - 20, this.height - 55);
+    ctx.fillText('E: Interact', this.width - 20, this.height - 25);
   }
 }

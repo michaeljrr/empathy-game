@@ -64,8 +64,8 @@ const DIALOGUE_SCRIPTS: Record<string, DialogueTree> = {
 // ─── Characters ───────────────────────────────────────────────────────────────
 
 const CHARACTERS: Record<string, CharacterConfig> = {
-  patient_elderly_man: {
-    id: 'patient_elderly_man',
+  day1patientA: {
+    id: 'day1patientA',
     name: 'Mr. Tan',
     type: 'patient',
     accentColor: '#5B8FA8',
@@ -83,8 +83,8 @@ const CHARACTERS: Record<string, CharacterConfig> = {
     scriptKey: 'mr_tan',
     talkSound: '/src/assets/audio/voices/elderly_male_blip.mp3',
   },
-  patient_young_woman: {
-    id: 'patient_young_woman',
+  day1patientB: {
+    id: 'day1patientB',
     name: 'Mdm. Siti',
     type: 'patient',
     accentColor: '#B5748A',
@@ -588,6 +588,7 @@ export class DialogueScene {
     this.ctx.fillStyle    = '#FFFFFF';
     this.ctx.font         = '700 14px "Segoe UI", sans-serif';
     this.ctx.textBaseline = 'middle';
+    this.ctx.textAlign    = 'left';
     this.ctx.fillText(this.character.name, boxX + this.BOX_PAD + 14, boxY - 14);
 
     // ── Text states ───────────────────────────────────────────────────────
@@ -596,6 +597,7 @@ export class DialogueScene {
       this.ctx.fillStyle    = '#F0F0F0';
       this.ctx.font         = '16px "Segoe UI", sans-serif';
       this.ctx.textBaseline = 'top';
+      this.ctx.textAlign    = 'left';
       this.wrapText(
         this.displayedText,
         boxX + this.BOX_PAD + 8,
