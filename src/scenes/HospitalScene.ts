@@ -27,7 +27,7 @@ export class HospitalScene {
   private isActive: boolean = false;
 
   private showBedHitboxes: boolean = false; // Set to false to hide bed interaction zones
-  private showMovementBoundary: boolean = false; // Set to false to hide movement boundary
+  // private showMovementBoundary: boolean = false; // Set to false to hide movement boundary
 
   private get width() { return (this.canvas as any).logicalWidth || this.canvas.width; }
   private get height() { return (this.canvas as any).logicalHeight || this.canvas.height; }
@@ -305,27 +305,27 @@ export class HospitalScene {
     ctx.fill();
   }
 
-  private drawMovementBoundary(): void {
-    if (!this.showMovementBoundary) return; // Skip if disabled
+  // private drawMovementBoundary(): void {
+  //   if (!this.showMovementBoundary) return; // Skip if disabled
     
-    const ctx = this.ctx;
-    const bw  = this.movementBounds.right  - this.movementBounds.left;
-    const bh  = this.movementBounds.bottom - this.movementBounds.top;
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(0, 0, this.width, this.movementBounds.top);
-    ctx.fillRect(0, this.movementBounds.bottom, this.width, this.height - this.movementBounds.bottom);
-    ctx.fillRect(0, this.movementBounds.top, this.movementBounds.left, bh);
-    ctx.fillRect(this.movementBounds.right, this.movementBounds.top, this.width - this.movementBounds.right, bh);
-    ctx.strokeStyle = 'rgba(0,255,0,0.8)';
-    ctx.lineWidth   = 3;
-    ctx.strokeRect(this.movementBounds.left, this.movementBounds.top, bw, bh);
-    const m = 10;
-    ctx.fillStyle = 'rgba(0,255,0,0.9)';
-    ctx.fillRect(this.movementBounds.left  - 2,     this.movementBounds.top    - 2,     m, m);
-    ctx.fillRect(this.movementBounds.right - m + 2, this.movementBounds.top    - 2,     m, m);
-    ctx.fillRect(this.movementBounds.left  - 2,     this.movementBounds.bottom - m + 2, m, m);
-    ctx.fillRect(this.movementBounds.right - m + 2, this.movementBounds.bottom - m + 2, m, m);
-  }
+  //   const ctx = this.ctx;
+  //   const bw  = this.movementBounds.right  - this.movementBounds.left;
+  //   const bh  = this.movementBounds.bottom - this.movementBounds.top;
+  //   ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  //   ctx.fillRect(0, 0, this.width, this.movementBounds.top);
+  //   ctx.fillRect(0, this.movementBounds.bottom, this.width, this.height - this.movementBounds.bottom);
+  //   ctx.fillRect(0, this.movementBounds.top, this.movementBounds.left, bh);
+  //   ctx.fillRect(this.movementBounds.right, this.movementBounds.top, this.width - this.movementBounds.right, bh);
+  //   ctx.strokeStyle = 'rgba(0,255,0,0.8)';
+  //   ctx.lineWidth   = 3;
+  //   ctx.strokeRect(this.movementBounds.left, this.movementBounds.top, bw, bh);
+  //   const m = 10;
+  //   ctx.fillStyle = 'rgba(0,255,0,0.9)';
+  //   ctx.fillRect(this.movementBounds.left  - 2,     this.movementBounds.top    - 2,     m, m);
+  //   ctx.fillRect(this.movementBounds.right - m + 2, this.movementBounds.top    - 2,     m, m);
+  //   ctx.fillRect(this.movementBounds.left  - 2,     this.movementBounds.bottom - m + 2, m, m);
+  //   ctx.fillRect(this.movementBounds.right - m + 2, this.movementBounds.bottom - m + 2, m, m);
+  // }
 
   private drawInteractionPrompt(patient: Patient): void {
     const ctx = this.ctx;
