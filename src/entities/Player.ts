@@ -6,14 +6,14 @@ import nurseWalk2 from '../assets/images/characters/nurse/nurse_walk2.png';
 export class Player {
   public x: number;
   public y: number;
-  public width: number = 230;
-  public height: number = 280;
+  public width: number = 420;
+  public height: number = 420;
   
   // Separate dimensions for each sprite type
-  public walkingWidth: number = 230;
-  public walkingHeight: number = 280;
-  public idleWidth: number = 230;
-  public idleHeight: number = 280;
+  public walkingWidth: number = 336;
+  public walkingHeight: number = 420;
+  public idleWidth: number = 336;
+  public idleHeight: number = 420;
   
   private happySprite: HTMLImageElement;
   private walkingSprite1: HTMLImageElement;
@@ -24,7 +24,7 @@ export class Player {
   private facingLeft: boolean = false;
   private animationFrame: number = 0;
   private animationTimer: number = 0;
-  private animationSpeed: number = 15; // Frames between sprite changes (increased for slower animation)
+  private animationSpeed: number = 8; // Frames between sprite changes (increased for slower animation)
 
   constructor(x: number, y: number) {
     this.x = x;

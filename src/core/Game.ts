@@ -130,4 +130,20 @@ export class Game {
       this.ctx.globalAlpha = 1;
     }
   }
+
+  public setHospitalDay(
+    bedA?: { image?: string; characterId?: string },
+    bedB?: { image?: string; characterId?: string },
+    bedC?: { image?: string; characterId?: string },
+    bedD?: { image?: string; characterId?: string },
+    bedE?: { image?: string; characterId?: string }
+  ): void {
+    this.scenes.hospital.setBedDay(
+      bedA ?? { image: '../assets/images/backgrounds/patientA_in_bed.png', characterId: 'day1patientA' },
+      bedB ?? { image: '../assets/images/backgrounds/patientB_in_bed.png', characterId: 'day1patientB' },
+      bedC ?? { image: '../assets/images/backgrounds/patientC_in_bed.png', characterId: 'doctor_senior' },
+      bedD ?? { image: '../assets/images/backgrounds/bed.png' },
+      bedE
+    );
+  }
 }
