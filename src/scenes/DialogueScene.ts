@@ -244,6 +244,7 @@ export class DialogueScene {
   // Input
   private inputCooldown = 0;
   private readonly INPUT_COOLDOWN_MS = 180;
+  private isExiting = false;  // Prevents input spam during scene transitions
 
   // Layout constants
   private readonly BOX_H      = 180;   // dialogue box height
@@ -297,6 +298,7 @@ export class DialogueScene {
     this.bobTime      = 0;
     this.bobOffset    = 0;
     this.inputCooldown = 0;
+    this.isExiting    = false;  // Reset exit flag for new dialogue
     this.state        = 'TALKING';
 
     if (!this.imageCache.has(characterId)) {
@@ -473,6 +475,7 @@ export class DialogueScene {
 
   private handleKeyDown(e: KeyboardEvent): void {
     if (this.inputCooldown > 0) return;
+    if (this.isExiting) return;  // Ignore all input during scene transition
     this.inputCooldown = this.INPUT_COOLDOWN_MS;
 
     const key = e.key.toLowerCase();
@@ -529,6 +532,7 @@ export class DialogueScene {
 
     if (option.next === 'exit') {
       // Exit dialogue - dispatch scene change immediately
+      this.isExiting = true;  // Prevent further input during transition
       window.dispatchEvent(new CustomEvent('sceneChange', { 
         detail: { scene: 'hospital', bedLocation: this.bedLocation } 
       }));
@@ -559,6 +563,7 @@ export class DialogueScene {
     const next = this.tree[key];
     if (!next) {
       // End of dialogue - exit to hospital
+      this.isExiting = true;  // Prevent further input during transition
       window.dispatchEvent(new CustomEvent('sceneChange', { 
         detail: { scene: 'hospital', bedLocation: this.bedLocation } 
       }));

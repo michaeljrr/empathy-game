@@ -202,11 +202,12 @@ export class NameInputScene {
   // ── Input handling ─────────────────────────────────────────────────────────
 
   private handleKeyDown(e: KeyboardEvent): void {
-    if (this.inputCooldown > 0 || !this.inputActive) return;
+    if (!this.inputActive) return;
 
     const key = e.key;
 
     if (key === 'Enter') {
+      if (this.inputCooldown > 0) return; // Only block Enter if on cooldown
       // Confirm name (allow empty, will default to 'Nurse')
       this.inputCooldown = this.INPUT_COOLDOWN_MS;
       this.inputActive = false;
@@ -216,24 +217,25 @@ export class NameInputScene {
     }
 
     if (key === 'Backspace') {
+      if (this.inputCooldown > 0) return; // Only block Backspace if on cooldown
       if (this.playerName.length > 0) {
         this.playerName = this.playerName.slice(0, -1);
         this.cursorVisible = true;
         this.cursorTimer = 0;
       }
-      this.inputCooldown = this.INPUT_COOLDOWN_MS;
+      this.inputCooldown = 50; // Shorter cooldown for Backspace
       e.preventDefault();
       return;
     }
 
-    // Accept letters, spaces, and common characters
+    // Accept letters, spaces, and common characters - NO COOLDOWN for typing
     if (key.length === 1 && this.playerName.length < this.MAX_NAME_LENGTH) {
       // Allow alphanumeric and spaces
       if (/[a-zA-Z0-9 ]/.test(key)) {
         this.playerName += key;
         this.cursorVisible = true;
         this.cursorTimer = 0;
-        this.inputCooldown = this.INPUT_COOLDOWN_MS;
+        // No input cooldown for regular typing - instant response
       }
     }
   }

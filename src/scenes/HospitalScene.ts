@@ -7,6 +7,8 @@ import patientC_in_bed from '../assets/images/hospital/patientC_in_bed.png';
 import bed from '../assets/images/hospital/bed.png';
 import pagerImg from '../assets/images/ui/pager.png';
 import phoneImg from '../assets/images/items/phone.png';
+import lyliaNeutral from '../assets/images/characters/lylia/lylia_neutral.png';
+import nurseHappy from '../assets/images/characters/nurse/nurse_happy.png';
 
 export class HospitalScene {
   private canvas: HTMLCanvasElement;
@@ -28,6 +30,7 @@ export class HospitalScene {
   // ── Whether this scene is the active one ─────────────────────────────────
   // When false, ALL key input is ignored — prevents E from resetting dialogue
   private isActive: boolean = false;
+  private isTransitioning: boolean = false; // Prevents input spam during scene transitions
 
   // ── Pager notification system ────────────────────────────────────────────
   private pagerNotifications: number = 0;
@@ -58,6 +61,72 @@ export class HospitalScene {
   private mouseX: number = 0;
   private mouseY: number = 0;
   private boundMouseMove: (e: MouseEvent) => void;
+  private boundClick: (e: MouseEvent) => void;
+  
+  // ── Phone Popup System ────────────────────────────────────────────────────
+  private phonePopupActive: boolean = false;
+  private phonePopupY: number = 0; // Current Y position for animation
+  private phonePopupTargetY: number = 0; // Target Y position
+  private readonly PHONE_POPUP_SPEED: number = 25; // Animation speed
+  private readonly PHONE_POPUP_HEIGHT: number = 875; // Height of popup (matches phoneHeight)
+  
+  // Character sprites for phone dialogue
+  private lyliaSprite: HTMLImageElement;
+  private lyliaSpriteLoaded: boolean = false;
+  private nurseSprite: HTMLImageElement;
+  
+  // Phone dialogue state
+  private phoneDialogueStep: number = 0; // 0: Lylia message, 1: MC response
+  private phoneDialogueText: string = '';
+  private phoneDisplayedText: string = '';
+  private phoneTypewriterIndex: number = 0;
+  private phoneTypewriterTimer: number = 0;
+  private readonly PHONE_TYPEWRITER_SPEED: number = 30; // ms per character
+  private phoneIsTyping: boolean = false;
+  private phoneTextComplete: boolean = false;
+  
+  // Phone sprite bobbing animation
+  private phoneBobOffset: number = 0;
+  private phoneBobTime: number = 0;
+  
+  // Phone dialogue scripts
+  private readonly PHONE_DIALOGUES = [
+    { speaker: 'Lylia', text: 'eh you done yet? would you like to go home together', accentColor: '#B5748A', sprite: 'lylia' },
+    { speaker: 'player', text: 'sure', accentColor: '#5AC57A', sprite: 'lylia' } // Changed to 'player' and keep lylia sprite
+  ];
+  
+  // ── Phone UI Layout Configuration (configurable) ──────────────────────────
+  // You can now adjust phone image position, size, and content area independently:
+  // - phoneOffsetX/Y: Move the entire phone on screen (0 = centered horizontally)
+  // - phoneWidth/Height: Resize the phone image
+  // - contentAreaX/Y: Adjust where sprite/text appear relative to phone edge
+  private readonly PHONE_POPUP_CONFIG = {
+    // Phone position on screen
+    phoneOffsetX: 0,         // Horizontal offset from center (+ = right, - = left)
+    phoneOffsetY: 0,         // Vertical offset from animated position (+ = down, - = up)
+    
+    // Phone image display size (adjust this to resize the phone image)
+    phoneWidth: 1100,
+    phoneHeight: 1295,
+    
+    // Content area (independent from phone size - adjust sprite/text box area)
+    // These define the actual usable area for sprite and text
+    contentAreaX: 267,        // X offset from phone left edge
+    contentAreaY: 240,       // Y offset from phone top edge
+    contentAreaWidth: 547,   // Width of content area (680 - 62 - 62)
+    contentAreaHeight: 566,  // Height of content area (875 - 124 - 185)
+    
+    screenColor: '#95b899', // Sage green screen background
+    
+    // Dialogue box position within content area
+    dialogueBoxBottomMargin: 30, // Space from bottom of content area
+    dialogueBoxHeight: 140,
+    dialogueBoxPadding: 18,
+    
+    // Sprite position within content area
+    spritePadding: 25,
+    spriteMaxHeight: 340, // Max height for character sprite
+  };
   
   // ── Pager UI Configuration (adjust these for size/position) ────────────────
   private readonly PAGER_CONFIG = {
@@ -144,6 +213,14 @@ export class HospitalScene {
     this.phoneImage     = new Image();
     this.phoneImage.src = phoneImg;
     this.phoneImage.onload = () => { this.phoneImageLoaded = true; };
+    
+    // Load character sprites for phone dialogue
+    this.lyliaSprite     = new Image();
+    this.lyliaSprite.src = lyliaNeutral;
+    this.lyliaSprite.onload = () => { this.lyliaSpriteLoaded = true; };
+    
+    this.nurseSprite     = new Image();
+    this.nurseSprite.src = nurseHappy;
 
     this.player = new Player(800, 680);
     
@@ -160,12 +237,14 @@ export class HospitalScene {
     this.boundKeyDown = this.onKeyDown.bind(this);
     this.boundKeyUp   = this.onKeyUp.bind(this);
     this.boundMouseMove = this.onMouseMove.bind(this);
+    this.boundClick = this.onClick.bind(this);
 
     // Register listeners once — they stay registered the whole game lifetime.
     // The isActive flag gates whether they do anything.
     window.addEventListener('keydown', this.boundKeyDown);
     window.addEventListener('keyup',   this.boundKeyUp);
     this.canvas.addEventListener('mousemove', this.boundMouseMove);
+    this.canvas.addEventListener('click', this.boundClick);
   }
 
   public setBedImages(patientAImg?: string, patientBImg?: string, patientCImg?: string, patientDImg?: string): void {
@@ -232,6 +311,14 @@ export class HospitalScene {
     // ← Hard gate: do nothing if hospital is not the active scene
     if (!this.isActive) return;
 
+    // Handle phone popup dialogue
+    if (this.phonePopupActive) {
+      if (e.key === 'e' || e.key === 'E' || e.key === 'Enter' || e.key === ' ') {
+        this.advancePhoneDialogue();
+        return;
+      }
+    }
+
     // Handle completion sequence text box
     if (this.completionSequenceActive && this.completionTextDisplayed) {
       if (e.key === 'e' || e.key === 'E' || e.key === 'Enter' || e.key === ' ') {
@@ -256,6 +343,8 @@ export class HospitalScene {
   }
 
   private checkInteraction(): void {
+    if (this.isTransitioning) return; // Ignore input during scene transition
+    
     for (const patient of this.patients) {
       if (this.isPlayerNearHitbox(patient)) {
         // Check if bed is already completed
@@ -269,6 +358,7 @@ export class HospitalScene {
           console.warn(`HospitalScene: no characterId for "${patient.location}"`);
           return;
         }
+        this.isTransitioning = true; // Block further input during transition
         window.dispatchEvent(new CustomEvent('sceneChange', {
           detail: { scene: 'dialogue', characterId, bedLocation: patient.location }
         }));
@@ -303,6 +393,7 @@ export class HospitalScene {
   // ── Called by Game.ts when switching TO this scene ────────────────────────
   public activate(): void {
     this.isActive = true;
+    this.isTransitioning = false; // Reset transition flag when returning to scene
     this.keys     = {}; // clear any held keys from before
   }
 
@@ -319,6 +410,77 @@ export class HospitalScene {
     const scaleY = this.height / rect.height;
     this.mouseX = (e.clientX - rect.left) * scaleX;
     this.mouseY = (e.clientY - rect.top) * scaleY;
+  }
+
+  // ── Click handler ─────────────────────────────────────────────────────────
+  private onClick(_e: MouseEvent): void {
+    if (!this.isActive) return;
+    
+    // If phone popup is active, handle dialogue progression
+    if (this.phonePopupActive) {
+      this.advancePhoneDialogue();
+      return;
+    }
+    
+    // Check if phone icon was clicked
+    if (this.isMouseOverPhone() && this.phoneNotifications > 0) {
+      this.openPhonePopup();
+    }
+  }
+
+  // ── Open phone popup ──────────────────────────────────────────────────────
+  private openPhonePopup(): void {
+    console.log('[HospitalScene] Opening phone popup');
+    this.phonePopupActive = true;
+    this.phonePopupY = this.height; // Start off-screen at bottom
+    this.phonePopupTargetY = this.height - this.PHONE_POPUP_HEIGHT; // Target position
+    this.phoneDialogueStep = 0;
+    this.startPhoneTypewriter(this.PHONE_DIALOGUES[0].text);
+  }
+
+  // ── Start phone typewriter ────────────────────────────────────────────────
+  private startPhoneTypewriter(text: string): void {
+    this.phoneDialogueText = text;
+    this.phoneDisplayedText = '';
+    this.phoneTypewriterIndex = 0;
+    this.phoneTypewriterTimer = 0;
+    this.phoneIsTyping = true;
+    this.phoneTextComplete = false;
+  }
+
+  // ── Advance phone dialogue ────────────────────────────────────────────────
+  private advancePhoneDialogue(): void {
+    // If still typing, skip to end
+    if (this.phoneIsTyping) {
+      this.phoneIsTyping = false;
+      this.phoneDisplayedText = this.phoneDialogueText;
+      this.phoneTextComplete = true;
+      return;
+    }
+
+    // If text is complete, move to next step
+    if (this.phoneTextComplete) {
+      this.phoneDialogueStep++;
+      
+      if (this.phoneDialogueStep < this.PHONE_DIALOGUES.length) {
+        // Show next dialogue
+        this.startPhoneTypewriter(this.PHONE_DIALOGUES[this.phoneDialogueStep].text);
+      } else {
+        // Phone dialogue complete - transition to ending scene
+        this.closePhonePopup();
+        console.log('[HospitalScene] Phone dialogue complete, transitioning to Day1EndingScene');
+        window.dispatchEvent(new CustomEvent('sceneChange', {
+          detail: { scene: 'day1Ending' }
+        }));
+      }
+    }
+  }
+
+  // ── Close phone popup ─────────────────────────────────────────────────────
+  private closePhonePopup(): void {
+    console.log('[HospitalScene] Closing phone popup');
+    this.phonePopupActive = false;
+    this.phoneNotifications = 0; // Clear notification badge
   }
 
   // ── Mark a bed as completed ──────────────────────────────────────────────
@@ -371,6 +533,37 @@ export class HospitalScene {
     this.phoneFloatOffset += this.PHONE_CONFIG.floatSpeed;
     if (this.phoneFloatOffset > Math.PI * 2) {
       this.phoneFloatOffset -= Math.PI * 2;
+    }
+    
+    // ── Phone popup animation and typewriter ───────────────────────────────
+    if (this.phonePopupActive) {
+      // Animate popup sliding up
+      if (this.phonePopupY > this.phonePopupTargetY) {
+        this.phonePopupY = Math.max(this.phonePopupTargetY, this.phonePopupY - this.PHONE_POPUP_SPEED);
+      }
+      
+      // Update typewriter
+      if (this.phoneIsTyping) {
+        this.phoneTypewriterTimer += 16; // Assuming ~60fps, each frame is ~16ms
+        while (this.phoneTypewriterTimer >= this.PHONE_TYPEWRITER_SPEED && this.phoneTypewriterIndex < this.phoneDialogueText.length) {
+          this.phoneTypewriterTimer -= this.PHONE_TYPEWRITER_SPEED;
+          this.phoneDisplayedText += this.phoneDialogueText[this.phoneTypewriterIndex++];
+        }
+        if (this.phoneTypewriterIndex >= this.phoneDialogueText.length) {
+          this.phoneIsTyping = false;
+          this.phoneDisplayedText = this.phoneDialogueText;
+          this.phoneTextComplete = true;
+        }
+      }
+      
+      // Update sprite bobbing animation
+      this.phoneBobTime += 16;
+      this.phoneBobOffset = this.phoneIsTyping
+        ? Math.sin(this.phoneBobTime / 280) * 4
+        : Math.sin(this.phoneBobTime / 800) * 2;
+      
+      // Don't process other updates while phone popup is active
+      return;
     }
 
     // Handle completion sequence animation
@@ -457,6 +650,11 @@ export class HospitalScene {
     // Draw completion text box if active
     if (this.completionSequenceActive && this.completionTextDisplayed) {
       this.drawCompletionTextBox();
+    }
+    
+    // Draw phone popup overlay (on top of everything)
+    if (this.phonePopupActive) {
+      this.drawPhonePopup();
     }
     
     this.drawUI();
@@ -935,6 +1133,167 @@ export class HospitalScene {
     ctx.fillText('▼  E to continue', boxX + boxW - boxPad, boxY + boxH - 16);
     ctx.textAlign = 'left';
     ctx.globalAlpha = 1;
+  }
+
+  // ── Draw phone popup overlay ──────────────────────────────────────────────
+  private drawPhonePopup(): void {
+    const ctx = this.ctx;
+    const cfg = this.PHONE_POPUP_CONFIG;
+    
+    // Draw semi-transparent overlay background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, this.width, this.height);
+    
+    // Phone popup dimensions and position
+    const phoneWidth = cfg.phoneWidth;
+    const phoneHeight = cfg.phoneHeight;
+    const phoneX = (this.width - phoneWidth) / 2 + cfg.phoneOffsetX;
+    const phoneY = this.phonePopupY + cfg.phoneOffsetY;
+    
+    // Draw phone image (no stretching - maintain aspect ratio)
+    if (this.phoneImageLoaded) {
+      ctx.drawImage(this.phoneImage, phoneX, phoneY, phoneWidth, phoneHeight);
+    } else {
+      // Fallback: draw phone outline
+      ctx.fillStyle = '#2c3e50';
+      this.roundRect(ctx, phoneX, phoneY, phoneWidth, phoneHeight, 40);
+      ctx.fill();
+      
+      // Phone screen area
+      ctx.fillStyle = cfg.screenColor;
+      const screenX = phoneX + cfg.contentAreaX;
+      const screenY = phoneY + cfg.contentAreaY;
+      const screenW = cfg.contentAreaWidth;
+      const screenH = cfg.contentAreaHeight;
+      this.roundRect(ctx, screenX, screenY, screenW, screenH, 8);
+      ctx.fill();
+    }
+    
+    // ── Calculate content area inside phone (independent from phone size) ──
+    const screenX = phoneX + cfg.contentAreaX;
+    const screenY = phoneY + cfg.contentAreaY;
+    const screenWidth = cfg.contentAreaWidth;
+    const screenHeight = cfg.contentAreaHeight;
+    
+    // Draw backdrop to hide "ONE NEW MESSAGE" text
+    ctx.fillStyle = cfg.screenColor;
+    this.roundRect(ctx, screenX, screenY, screenWidth, screenHeight, 8);
+    ctx.fill();
+    
+    // Get current dialogue
+    const currentDialogue = this.PHONE_DIALOGUES[this.phoneDialogueStep];
+    
+    // Draw character sprite (always Lylia, with bobbing)
+    if (this.lyliaSpriteLoaded) {
+      const img = this.lyliaSprite;
+      const spriteNaturalW = img.naturalWidth;
+      const spriteNaturalH = img.naturalHeight;
+      
+      // Scale to fit within sprite area
+      const scale = Math.min(
+        (screenWidth - cfg.spritePadding * 2) / spriteNaturalW,
+        cfg.spriteMaxHeight / spriteNaturalH,
+        1 // Don't upscale
+      );
+      
+      const spriteWidth = spriteNaturalW * scale;
+      const spriteHeight = spriteNaturalH * scale;
+      const spriteX = screenX + (screenWidth - spriteWidth) / 2;
+      const spriteY = screenY + cfg.spritePadding + this.phoneBobOffset;
+      
+      ctx.drawImage(img, spriteX, spriteY, spriteWidth, spriteHeight);
+    }
+    
+    // ── Draw DialogueScene-style text box ─────────────────────────────────
+    const boxX = screenX + cfg.dialogueBoxPadding;
+    const boxY = screenY + screenHeight - cfg.dialogueBoxHeight - cfg.dialogueBoxBottomMargin;
+    const boxW = screenWidth - cfg.dialogueBoxPadding * 2;
+    const boxH = cfg.dialogueBoxHeight;
+    
+    // Get speaker info
+    const isPlayer = currentDialogue.speaker === 'player';
+    const playerName = localStorage.getItem('playerName') || 'Nurse';
+    const speakerName = isPlayer ? playerName : currentDialogue.speaker;
+    const accentColor = currentDialogue.accentColor;
+    
+    // Panel (dark semi-transparent background)
+    ctx.fillStyle = 'rgba(15, 20, 30, 0.88)';
+    this.roundRect(ctx, boxX, boxY, boxW, boxH, 10);
+    ctx.fill();
+    
+    // Left accent stripe
+    ctx.fillStyle = accentColor;
+    this.roundRect(ctx, boxX, boxY, 4, boxH, 10);
+    ctx.fill();
+    
+    // Top border line
+    ctx.strokeStyle = accentColor;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(boxX + 10, boxY);
+    ctx.lineTo(boxX + boxW - 10, boxY);
+    ctx.stroke();
+    
+    // Name plate (top-left corner)
+    ctx.font = '700 12px "Segoe UI", sans-serif';
+    const nameWidth = ctx.measureText(speakerName).width;
+    const namePlateW = nameWidth + 20;
+    const namePlateH = 22;
+    
+    ctx.fillStyle = accentColor;
+    this.roundRect(ctx, boxX + cfg.dialogueBoxPadding, boxY - namePlateH, namePlateW, namePlateH, 5);
+    ctx.fill();
+    
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '700 12px "Segoe UI", sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText(speakerName, boxX + cfg.dialogueBoxPadding + 10, boxY - namePlateH / 2);
+    
+    // Dialogue text with word wrapping
+    ctx.fillStyle = '#F0F0F0';
+    ctx.font = '14px "Segoe UI", sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    const textX = boxX + cfg.dialogueBoxPadding + 6;
+    const textY = boxY + 12;
+    const maxWidth = boxW - cfg.dialogueBoxPadding * 2 - 12;
+    
+    this.wrapTextPhone(ctx, this.phoneDisplayedText, textX, textY, maxWidth, 20);
+    
+    // "Tap to continue" indicator (only show when text is complete)
+    if (this.phoneTextComplete) {
+      const pulse = 0.5 + Math.abs(Math.sin(performance.now() / 420)) * 0.5;
+      ctx.fillStyle = accentColor;
+      ctx.globalAlpha = pulse;
+      ctx.font = '11px "Segoe UI", sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'right';
+      ctx.fillText('▼  E to continue', boxX + boxW - cfg.dialogueBoxPadding, boxY + boxH - 12);
+      ctx.globalAlpha = 1;
+      ctx.textAlign = 'left';
+    }
+  }
+
+  // Helper method for word wrapping in phone dialogue
+  private wrapTextPhone(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number): void {
+    const words = text.split(' ');
+    let line = '';
+    let currentY = y;
+    
+    for (let i = 0; i < words.length; i++) {
+      const testLine = line + words[i] + ' ';
+      const metrics = ctx.measureText(testLine);
+      
+      if (metrics.width > maxWidth && i > 0) {
+        ctx.fillText(line, x, currentY);
+        line = words[i] + ' ';
+        currentY += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line, x, currentY);
   }
 
   private drawUI(): void {

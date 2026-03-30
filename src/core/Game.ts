@@ -3,8 +3,9 @@ import { NameInputScene } from '../scenes/NameInputScene';
 import { IntroScene }     from '../scenes/IntroScene';
 import { HospitalScene }  from '../scenes/HospitalScene';
 import { DialogueScene }  from '../scenes/DialogueScene';
+import { Day1EndingScene } from '../scenes/Day1EndingScene';
 
-type SceneType = 'entry' | 'nameInput' | 'intro' | 'hospital' | 'dialogue';
+type SceneType = 'entry' | 'nameInput' | 'intro' | 'hospital' | 'dialogue' | 'day1Ending';
 
 type FadeState = 'none' | 'out' | 'in';
 
@@ -18,6 +19,7 @@ export class Game {
     intro:     IntroScene;
     hospital:  HospitalScene;
     dialogue:  DialogueScene;
+    day1Ending: Day1EndingScene;
   };
 
   private lastTimestamp: number = 0;
@@ -38,6 +40,7 @@ export class Game {
       intro:     new IntroScene(this.canvas, this.ctx),
       hospital:  new HospitalScene(this.canvas, this.ctx),
       dialogue:  new DialogueScene(this.canvas, this.ctx),
+      day1Ending: new Day1EndingScene(this.canvas, this.ctx),
     };
 
     // Hospital starts inactive — entry scene is first
@@ -85,6 +88,7 @@ export class Game {
       case 'intro':     this.scenes.intro.deactivate();     break;
       case 'hospital':  this.scenes.hospital.deactivate();  break;
       case 'dialogue':  this.scenes.dialogue.cleanup();     break;
+      case 'day1Ending': this.scenes.day1Ending.deactivate(); break;
     }
 
     this.currentScene = scene;
@@ -103,6 +107,9 @@ export class Game {
       case 'dialogue':
         if (!characterId) { console.error('Game: missing characterId for dialogue scene'); return; }
         this.scenes.dialogue.init(characterId, bedLocation);
+        break;
+      case 'day1Ending':
+        this.scenes.day1Ending.activate();
         break;
     }
   }
@@ -138,6 +145,7 @@ export class Game {
       case 'intro':     this.scenes.intro.update(delta);     break;
       case 'hospital':  this.scenes.hospital.update();       break;
       case 'dialogue':  this.scenes.dialogue.update(delta);  break;
+      case 'day1Ending': this.scenes.day1Ending.update(delta); break;
     }
   }
 
@@ -152,6 +160,7 @@ export class Game {
       case 'intro':     this.scenes.intro.render();     break;
       case 'hospital':  this.scenes.hospital.render();  break;
       case 'dialogue':  this.scenes.dialogue.render();  break;
+      case 'day1Ending': this.scenes.day1Ending.render(); break;
     }
 
     // Draw fade overlay on top of everything
