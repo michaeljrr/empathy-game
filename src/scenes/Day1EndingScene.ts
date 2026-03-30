@@ -96,14 +96,11 @@ export class Day1EndingScene {
   private readonly BOX_H = 180;
   private readonly BOX_PAD = 22;
   private readonly MARGIN = 16;
-  private readonly CHAR_FOOT = 1.3;  // feet sit at this fraction down the screen
   private readonly CHAR_MAX_H = 1.3;  // max height the sprite may occupy
 
   // Colors
   private readonly LYLIA_ACCENT = '#B5748A';
-  private readonly LYLIA_TINT = '#F5E2EA';
   private readonly PLAYER_ACCENT = '#5AC57A';
-  private readonly PLAYER_TINT = '#D4F5DC';
 
   private playerName: string = 'Nurse';
 
@@ -395,7 +392,6 @@ export class Day1EndingScene {
     const isLylia = this.currentLine.speaker === 'lylia';
     const speakerName = isLylia ? 'Lylia' : this.playerName;
     const accent = isLylia ? this.LYLIA_ACCENT : this.PLAYER_ACCENT;
-    const tint = isLylia ? this.LYLIA_TINT : this.PLAYER_TINT;
 
     // Panel
     ctx.fillStyle = 'rgba(15, 20, 30, 0.88)';
