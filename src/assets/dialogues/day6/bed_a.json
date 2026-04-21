@@ -1,0 +1,188 @@
+{
+  "metadata": {
+    "id": "day6_bed_a",
+    "title": "Bed A - The Empty Bed",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "The bed is empty. Freshly made, sheets pulled taut, pillow perfectly centred. No trace of anyone.",
+    "expression": "worried",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "worried",
+        "responseSpeaker": "empty",
+        "next": "water_cup_gone"
+      }
+    ]
+  },
+  "water_cup_gone": {
+    "text": "His water cup is gone. The get well card his son taped to the bedside cabinet is gone. The blanket he used to pull up to his chin is folded neatly at the foot of the bed, waiting for someone new.",
+    "expression": "worried",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "worried",
+        "responseSpeaker": "empty",
+        "next": "dont_move"
+      }
+    ]
+  },
+  "dont_move": {
+    "text": "You stand there and don't move for a long moment.",
+    "expression": "worried",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "worried",
+        "responseSpeaker": "empty",
+        "next": "hand_on_shoulder"
+      }
+    ]
+  },
+  "hand_on_shoulder": {
+    "text": "A hand touches your shoulder.",
+    "expression": "worried",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "Hey.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "senior_nurse"
+      }
+    ]
+  },
+  "senior_nurse": {
+    "text": "You turn. It's one of the senior nurses, her expression is careful and soft.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "Uncle Lim. He passed last night.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "very_still"
+      }
+    ]
+  },
+  "very_still": {
+    "text": "You hear the words. You understand them. Something in your chest just goes very still.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "sad",
+        "responseSpeaker": "player",
+        "next": "what_happened"
+      }
+    ]
+  },
+  "what_happened": {
+    "text": "What happened?",
+    "expression": "neutral",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "We don't fully know yet. It was sudden. The night team did everything they could.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "squeezes_shoulder"
+      }
+    ]
+  },
+  "squeezes_shoulder": {
+    "text": "She squeezes your shoulder gently.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "I know you were close to him. You took really good care of him, you know that? He always talked about you.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "you_nod"
+      }
+    ]
+  },
+  "you_nod": {
+    "text": "You nod. You don't trust your voice right now.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "Oh — and there's something at the nurses' station for you. He left it before his surgery. Asked us to pass it to you when the time was right.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "last_squeeze"
+      }
+    ]
+  },
+  "last_squeeze": {
+    "text": "She gives your shoulder one last squeeze and walks away down the corridor.",
+    "expression": "worried",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "worried",
+        "responseSpeaker": "empty",
+        "next": "turn_back"
+      }
+    ]
+  },
+  "turn_back": {
+    "text": "You turn back to the empty bed. The flat pillow. The folded blanket.",
+    "expression": "worried",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "worried",
+        "responseSpeaker": "empty",
+        "next": "another_patient"
+      }
+    ]
+  },
+  "another_patient": {
+    "text": "And tomorrow there'll be another patient in that same bed.",
+    "expression": "worried",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "worried",
+        "responseSpeaker": "empty",
+        "next": "not_wanting_to_believe"
+      }
+    ]
+  },
+  "not_wanting_to_believe": {
+    "text": "You remember who said that to you. You remember not wanting to believe it.",
+    "expression": "worried",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "Continue",
+        "response": "",
+        "responseExpression": "worried",
+        "next": "exit"
+      }
+    ]
+  }
+}

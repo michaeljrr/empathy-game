@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "id": "karen_day5_complaint",
+    "title": "Karen - The Complaint",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "Karen is sitting up in bed, arms folded, watching you approach with the expression of someone who has been rehearsing what they're going to say.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "happy",
+        "responseSpeaker": "player",
+        "next": "morning_karen"
+      }
+    ]
+  },
+  "morning_karen": {
+    "text": "Morning, Karen. How are you feeling today?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Hmph.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "lets_that_sit"
+      }
+    ]
+  },
+  "lets_that_sit": {
+    "text": "She lets that sit for a moment. You wait.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "I want you to know. I made a complaint. About yesterday. I spoke to the head nurse this morning. Told her exactly what you said to me. Word for word. I have a very good memory.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "stone_in_water"
+      }
+    ]
+  },
+  "stone_in_water": {
+    "text": "The words land like a stone dropped into still water. You feel the ripple move through you from your chest outward. Somewhere behind your ribs, the breath you were about to take doesn't quite arrive.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "...I see.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "mc_choice"
+      }
+    ]
+  },
+  "mc_choice": {
+    "text": "",
+    "expression": "neutral",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "I understand. I'm sorry for what I said yesterday.",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "silence"
+      },
+      {
+        "text": "...Okay.",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "silence"
+      }
+    ]
+  },
+  "silence": {
+    "text": "She doesn't say it's okay. She doesn't say anything.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "Leave",
+        "response": "",
+        "responseExpression": "neutral",
+        "next": "exit"
+      }
+    ]
+  }
+}

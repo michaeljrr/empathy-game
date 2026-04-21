@@ -1,0 +1,216 @@
+{
+  "metadata": {
+    "id": "mr_soo_day5",
+    "title": "Mr. Soo - Complaints",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "Good morning! I'm your nurse today. How are you—",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Finally. I pressed the bell twenty minutes ago.",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "sorry_for_wait"
+      }
+    ]
+  },
+  "sorry_for_wait": {
+    "text": "I'm sorry for the wait, I was with another patient. What do you need?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "First of all, this pillow. Terrible. Like sleeping on a brick. I want a new one. And the TV remote is spoiled, I've been pressing and pressing since last night. And I want to know why nobody came to check on me overnight? I could have died and nobody would know.",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "night_rounds"
+      }
+    ]
+  },
+  "night_rounds": {
+    "text": "The night team does regular rounds, Mr. Soo. They would have—",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "I didn't see anyone. Not once. I was awake the whole night because this mattress is too hard. Can you change it?",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "cant_change_mattress"
+      }
+    ]
+  },
+  "cant_change_mattress": {
+    "text": "I'm afraid we can't change the mattress but I can get you an extra—",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "And another thing. My wife called this morning and the nurse who picked up was very rude. Very curt. Just said visiting hours and hung up. My wife was very upset. I want to make a formal complaint.",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "ill_flag"
+      }
+    ]
+  },
+  "ill_flag": {
+    "text": "I understand, I'll flag—",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Also, the food. I'm on a special diet at home — no MSG, low sodium, I eat very clean. The food this morning was clearly not low sodium. I could taste it immediately. And another thing — I want a private room. This ward is too noisy. Someone was coughing the whole night.",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "smell_hits"
+      }
+    ]
+  },
+  "smell_hits": {
+    "text": "Before you can respond, it hits you. The smell. Sharp and unmistakable. Your eyes move to the sheets and confirm what you already know.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "agitated",
+        "responseSpeaker": "empty",
+        "next": "expression_doesnt_soften"
+      }
+    ]
+  },
+  "expression_doesnt_soften": {
+    "text": "Mr. Soo notices you. His expression doesn't soften. His chin stays up.",
+    "expression": "agitated",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "I called for help forty minutes ago. Nobody came. So you can add that to the list of complaints as well.",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "no_embarrassment"
+      }
+    ]
+  },
+  "no_embarrassment": {
+    "text": "No embarrassment. No pause. Just another item on the list.",
+    "expression": "agitated",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "happy",
+        "responseSpeaker": "player",
+        "next": "get_supplies"
+      }
+    ]
+  },
+  "get_supplies": {
+    "text": "I'll get the supplies to clean—",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "And be quick about it. I've been sitting like this for forty minutes already. It's completely unacceptable.",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "pull_curtain"
+      }
+    ]
+  },
+  "pull_curtain": {
+    "text": "You pull the curtain. You get the supplies. You do what needs to be done, breathing through your mouth, keeping your face neutral the way you were trained to. He talks the entire time. About the smell, about the indignity of it, about how this would never happen in a private hospital, about how he pays his taxes.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "no_thank_you"
+      }
+    ]
+  },
+  "no_thank_you": {
+    "text": "He does not say thank you.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "not_once"
+      }
+    ]
+  },
+  "not_once": {
+    "text": "Not once.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "Finally. Now can you do something about the TV remote? I've been asking since last night.",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "strip_gloves"
+      }
+    ]
+  },
+  "strip_gloves": {
+    "text": "You strip off your gloves. You write TV remote on his chart. Your handwriting is slightly less neat than usual.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "happy",
+        "responseSpeaker": "player",
+        "next": "see_what_i_can_do"
+      }
+    ]
+  },
+  "see_what_i_can_do": {
+    "text": "I'll see what I can do.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "That's what the last nurse said.",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "walk_away"
+      }
+    ]
+  },
+  "walk_away": {
+    "text": "You pull the curtain back open. Pick up your clipboard. And walk away from Bed B before your face can betray you.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "Leave",
+        "response": "",
+        "responseExpression": "neutral",
+        "next": "exit"
+      }
+    ]
+  }
+}

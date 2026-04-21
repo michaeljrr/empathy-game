@@ -2,6 +2,9 @@
 //  IntroScene.ts  —  Prologue text crawl before gameplay
 // ============================================================
 
+import { SFX, startLoop, fadeOutLoop, playClipped } from '../core/audio';
+import { isInteractKey } from '../core/settings';
+
 // ── Beat definitions ──────────────────────────────────────────────────────────
 // Each beat is one screen. The player presses E / Space / Enter to advance.
 //
@@ -84,12 +87,19 @@ export class IntroScene {
     this.titleHoldTimer   = 0;
     this.startBeat(0);
 
+    // Muffled voices play under the intro narration beats — gives the
+    // "walking into a hospital" vibe before the DAY 1 title card appears.
+    startLoop(SFX.MUFFLED_VOICES, 0.22);
+
     this.boundKeyDown = this.handleKeyDown.bind(this);
     window.addEventListener('keydown', this.boundKeyDown);
   }
 
   public deactivate(): void {
     if (this.boundKeyDown) window.removeEventListener('keydown', this.boundKeyDown);
+    // Safety — fade the loop out if we're somehow deactivated before the
+    // DAY 1 title was reached.
+    fadeOutLoop(SFX.MUFFLED_VOICES, 800);
   }
 
   // ── Update ─────────────────────────────────────────────────────────────────
@@ -271,6 +281,12 @@ export class IntroScene {
     this.titleHoldTimer  = 0;
     this.fadingIn        = true;
     this.fadeAlpha       = 1;
+
+    // Muffled voices play under the narration beats only — fade them out the
+    // moment we reach the DAY 1 title card so the title lands in silence.
+    if (beat.type === 'title') {
+      fadeOutLoop(SFX.MUFFLED_VOICES, 900);
+    }
   }
 
   private canAdvance(): boolean {
@@ -297,9 +313,18 @@ export class IntroScene {
 
   private handleKeyDown(e: KeyboardEvent): void {
     if (this.inputCooldown > 0) return;
-    const key = e.key.toLowerCase();
 
-    if (key === 'e' || key === 'enter' || key === ' ') {
+    // Dev-only silent skip: `\` jumps straight to Day 1 hospital.
+    if (e.key === '\\') {
+      window.dispatchEvent(new CustomEvent('sceneChange', {
+        detail: { scene: 'hospital', startDay: true, dayPatientCount: 3 }
+      }));
+      this.fadingOut = false; // prevent double-dispatch from update()
+      return;
+    }
+
+    if (isInteractKey(e)) {
+      playClipped(SFX.CHOICE, 1000, 0.35);
       if (this.isTyping) {
         // Skip typewriter
         this.isTyping        = false;

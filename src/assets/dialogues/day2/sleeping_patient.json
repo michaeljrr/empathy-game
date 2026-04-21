@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "id": "sleeping_patient_day2",
+    "title": "Sleeping Patient",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "Patient is sound asleep. Let's not wake him.",
+    "expression": "neutral",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "next": "exit"
+      }
+    ]
+  },
+  "exit": {
+    "text": "",
+    "expression": "neutral",
+    "speaker": "player",
+    "options": []
+  }
+}

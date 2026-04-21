@@ -1,0 +1,209 @@
+{
+  "metadata": {
+    "id": "karen_day4",
+    "title": "Karen - Complaint Spiral",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "Hi Karen, I'm—",
+    "expression": "agitated",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Finally! I've been pressing for so long! Do you know how long I've been waiting?",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "complaint_list_1"
+      }
+    ]
+  },
+  "complaint_list_1": {
+    "text": "My back is still sore from yesterday, the pillow you gave me did nothing. And I think I have a fever, my whole body feels hot. And the food this morning was cold.",
+    "expression": "agitated",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "complaint_list_2"
+      }
+    ]
+  },
+  "complaint_list_2": {
+    "text": "I specifically asked for warm food. And the toilet, have you seen the toilet? It's not clean enough, I don't feel comfortable using it. And my drip has been beeping since this morning, nobody came—",
+    "expression": "agitated",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "Karen, the drip beeped because—",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "complaint_list_3"
+      }
+    ]
+  },
+  "complaint_list_3": {
+    "text": "And another thing! My daughter called the nurses' station this morning and nobody picked up. She was very worried. How can nobody pick up? What if it was an emergency?",
+    "expression": "agitated",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "Let me check the drip first—",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "complaint_list_4"
+      }
+    ]
+  },
+  "complaint_list_4": {
+    "text": "Also, I want to ask — my doctor said I need to do a blood test today.",
+    "expression": "agitated",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "complaint_list_5"
+      }
+    ]
+  },
+  "complaint_list_5": {
+    "text": "Why haven't they come yet? Every time I come here, I have to wait, wait, wait. Nobody tells me anything. How am I supposed to know what's happening with my own body?",
+    "expression": "agitated",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "agitated",
+        "responseSpeaker": "empty",
+        "next": "hot_and_tired"
+      }
+    ]
+  },
+  "hot_and_tired": {
+    "text": "Something hot and tired flickers behind your eyes.",
+    "expression": "agitated",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "agitated",
+        "responseSpeaker": "empty",
+        "next": "uncle_lim_face"
+      }
+    ]
+  },
+  "uncle_lim_face": {
+    "text": "You've been on your feet since six. Uncle Lim's face at the window is still fresh in your mind. And Karen is already on her fourth complaint in under two minutes.",
+    "expression": "agitated",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "agitated",
+        "responseSpeaker": "player",
+        "next": "mc_choice"
+      }
+    ]
+  },
+  "mc_choice": {
+    "text": "",
+    "expression": "agitated",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "Karen. I left a post-op patient mid-sentence to come here. There are people in this ward who are far sicker than you and they are not pressing that bell every thirty seconds.",
+        "response": "Excuse me? I am a patient here. I am sick. And you are being very rude to me right now.",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "indignant"
+      },
+      {
+        "text": "You have not let me say one complete sentence since I walked in. I am trying to help you but I cannot help someone who will not let me speak.",
+        "response": "Excuse me? I am a patient here. I am sick. And you are being very rude to me right now.",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "indignant"
+      }
+    ]
+  },
+  "indignant": {
+    "text": "Her voice has gone up a pitch, indignant and sharp. She sits up straighter in her bed, chin lifted.",
+    "expression": "agitated",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "I want to make a complaint. What is your name? I am going to tell your supervisor. This is not how you treat a patient. I pay for this ward, you know.",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "reaches_bell"
+      }
+    ]
+  },
+  "reaches_bell": {
+    "text": "She reaches for the call bell again — this time not out of need, but out of something closer to spite.",
+    "expression": "agitated",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "I want to speak to someone else. Not you.",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "feel_sick"
+      }
+    ]
+  },
+  "feel_sick": {
+    "text": "The moment it's out you feel sick.",
+    "expression": "agitated",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "agitated",
+        "responseSpeaker": "empty",
+        "next": "karen_didnt_make"
+      }
+    ]
+  },
+  "karen_didnt_make": {
+    "text": "She didn't make you say that. The exhaustion did. The six AM start did. Uncle Lim's face at the window did. Karen just happened to be the one standing at the end of it.",
+    "expression": "agitated",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "agitated",
+        "responseSpeaker": "empty",
+        "next": "walk_away"
+      }
+    ]
+  },
+  "walk_away": {
+    "text": "You swallow the sourness rising in your throat, set her chart back on the hook, and walk away. Your stomach churns but you try to ignore the feeling.",
+    "expression": "agitated",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "Leave",
+        "response": "",
+        "responseExpression": "agitated",
+        "next": "exit"
+      }
+    ]
+  }
+}

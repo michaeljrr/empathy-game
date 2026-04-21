@@ -1,0 +1,335 @@
+{
+  "metadata": {
+    "id": "uncle_lim_day3_preop",
+    "title": "Uncle Lim - Pre-Op Check",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "Good morning, Uncle Lim! Big day today, huh? How are you feeling?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Aiyo, nervous lah! But excited also. Last night I couldn't sleep, keep thinking, finally, finally. Thirty-seven months on that dialysis chair... now maybe, last time already.",
+        "responseExpression": "happy",
+        "responseSpeaker": "character",
+        "next": "thirty_seven_months"
+      }
+    ]
+  },
+  "thirty_seven_months": {
+    "text": "Thirty-seven months. You counted?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Every single one.",
+        "responseExpression": "happy",
+        "responseSpeaker": "character",
+        "next": "counted"
+      }
+    ]
+  },
+  "counted": {
+    "text": "When you sit in that chair three times a week, you count. Gives you something to look forward to, you know? And now here we are.",
+    "expression": "neutral",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "fidget"
+      }
+    ]
+  },
+  "fidget": {
+    "text": "He chuckles softly, but you can see his fingers fidgeting with the edge of his hospital blanket.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "hold_hand"
+      }
+    ]
+  },
+  "hold_hand": {
+    "text": "You reach over and gently grasp his hand without saying a word.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "routine"
+      }
+    ]
+  },
+  "routine": {
+    "text": "Uncle, I'm going to run through a few things with you before the team comes, okay? Just routine.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Okay, okay. Ask lah.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "fasting_check"
+      }
+    ]
+  },
+  "fasting_check": {
+    "text": "Still fasting since midnight?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "You think I dare to eat? I want this surgery to go well!",
+        "responseExpression": "happy",
+        "responseSpeaker": "character",
+        "next": "good"
+      }
+    ]
+  },
+  "good": {
+    "text": "Good.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "happy",
+        "responseSpeaker": "player",
+        "next": "any_pain"
+      }
+    ]
+  },
+  "any_pain": {
+    "text": "Any new pain anywhere? Chest, back, stomach?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "No lah. All okay.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "wristband"
+      }
+    ]
+  },
+  "wristband": {
+    "text": "Alright. I'm going to check your wristband and run your vitals one more time.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "scan_wristband"
+      }
+    ]
+  },
+  "scan_wristband": {
+    "text": "You scan his wristband and move methodically through the checklist.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "cold_hands"
+      }
+    ]
+  },
+  "cold_hands": {
+    "text": "His hands are slightly cold.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "rub_hands"
+      }
+    ]
+  },
+  "rub_hands": {
+    "text": "You rub them briefly between yours before attaching the pulse oximeter, a small instinct more than a procedure.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "all_set"
+      }
+    ]
+  },
+  "all_set": {
+    "text": "All looking good, Uncle. You're all set.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "beat_of_quiet"
+      }
+    ]
+  },
+  "beat_of_quiet": {
+    "text": "There's a beat of quiet. He doesn't let go of your hand right away.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "nurse_ah"
+      }
+    ]
+  },
+  "nurse_ah": {
+    "text": "Nurse ah...",
+    "expression": "neutral",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "wistful"
+      }
+    ]
+  },
+  "wistful": {
+    "text": "He stares off out of the window, eyes look wistful, carrying the quiet weight of someone who has long since made peace with something that still hurts.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "head_up"
+      }
+    ]
+  },
+  "head_up": {
+    "text": "If anything happens in there... you'll make sure my son knows I wasn't scared, right? Tell him his father went in with his head up.",
+    "expression": "neutral",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "throat_tightens"
+      }
+    ]
+  },
+  "throat_tightens": {
+    "text": "Your throat tightens. You keep your face steady.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "mc_choice"
+      }
+    ]
+  },
+  "mc_choice": {
+    "text": "",
+    "expression": "neutral",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "Uncle, nothing is going to happen. You're going to be just fine.",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "nods_once"
+      },
+      {
+        "text": "I'll tell him. But you're going to be able to tell him yourself.",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "nods_once"
+      }
+    ]
+  },
+  "nods_once": {
+    "text": "He nods once, slowly, and releases your hand.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "Okay. Go do your work. Don't waste time on this old man.",
+        "responseExpression": "happy",
+        "responseSpeaker": "character",
+        "next": "never_waste"
+      }
+    ]
+  },
+  "never_waste": {
+    "text": "You are never a waste of time, Uncle Lim. See you later, okay?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "happy",
+        "responseSpeaker": "empty",
+        "next": "doorway_wave"
+      }
+    ]
+  },
+  "doorway_wave": {
+    "text": "You smile at him one last time from the doorway. He waves you off with a small, brave hand.",
+    "expression": "happy",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "Leave",
+        "response": "",
+        "responseExpression": "happy",
+        "next": "exit"
+      }
+    ]
+  }
+}

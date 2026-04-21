@@ -1,0 +1,223 @@
+{
+  "metadata": {
+    "id": "uncle_lim_day2",
+    "title": "Uncle Lim - BP Check",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "Good Morning Uncle Lim! Sorry for disturbing you! You just took your BP meds. I'll have to check on your blood pressure for you!",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Have at it! Don't worry dear! You're not a bother at all! I'm always glad to see you.",
+        "responseExpression": "happy",
+        "responseSpeaker": "character",
+        "next": "cuff_wrap"
+      }
+    ]
+  },
+  "cuff_wrap": {
+    "text": "He beams at you while stretching his arm out obediently you gently spread the velcro apart and wrap the blood pressure cuff around his arm.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "relax_arm"
+      }
+    ]
+  },
+  "relax_arm": {
+    "text": "Just relax your arm for me, Uncle. Keep it still... okay, perfect.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "monitor_reads"
+      }
+    ]
+  },
+  "monitor_reads": {
+    "text": "The monitor reads 130 over 82.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "all_good"
+      }
+    ]
+  },
+  "all_good": {
+    "text": "All good, Uncle! All prepared for your upcoming surgery!",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "notice_feet"
+      }
+    ]
+  },
+  "notice_feet": {
+    "text": "You smile at him and begin packing up the equipment when you catch a glance of his mildly swollen feet. Your eyes can't help but gaze at it sadly as you place the blood pressure monitor back into its box.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "uncle_grabs_hand"
+      }
+    ]
+  },
+  "uncle_grabs_hand": {
+    "text": "Uncle lim grabs your hand and squeezes it gently\n\nCome on, don't be too sad over it! I'm not a pity case! I've lived with this for... three years already, you know? These 'water-balloon' legs may look like water balloons but they've carried me to dialysis and back, three times a week, over a thousand days... and they haven't failed me yet.",
+    "expression": "neutral",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "pat_legs"
+      }
+    ]
+  },
+  "pat_legs": {
+    "text": "Uncle Lim pats tenderly at his legs.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "blame_self"
+      }
+    ]
+  },
+  "blame_self": {
+    "text": "Anyways I only have myself to blame.\n\nYou know, Nurse... people look at me and see a 'sick old man.' But when I was your age, I worked twelve-hour shifts at the Jurong Shipyard. Rain or shine, I was there. My kids needed school books, a roof... they needed a future.",
+    "expression": "neutral",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "you worked hard for them uncle and im sure they appreciate it",
+        "responseExpression": "happy",
+        "responseSpeaker": "player",
+        "next": "coke_story"
+      }
+    ]
+  },
+  "coke_story": {
+    "text": "Every afternoon, when the Singapore sun was so hot and my whole shirt was drenched... I would grab a cold can of Coke. Sometimes two. That sugar hit was the only thing that kept me going until the night shift. My wife... aiyo, she would nag at me non-stop. 'Drink more plain water!'",
+    "expression": "neutral",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "wife_nag"
+      }
+    ]
+  },
+  "wife_nag": {
+    "text": "I used to laugh and tell her, 'Aiyo, you worry too much, one a day is fine!'",
+    "expression": "neutral",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "what_to_do"
+      }
+    ]
+  },
+  "what_to_do": {
+    "text": "Aiyo what to do…",
+    "expression": "neutral",
+    "speaker": "character",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "promise_me"
+      }
+    ]
+  },
+  "promise_me": {
+    "text": "Uncle, don't be too hard on yourself. But promise me one thing, okay?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "take_care"
+      }
+    ]
+  },
+  "take_care": {
+    "text": "Once this transplant is over and you have that new kidney... you must remember to take care of yourself. No more 'one a day is fine' logic. You've done your part for the kids; now you have to stay healthy so you can actually enjoy being their father.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "(He looks at you, his eyes soft and wistful)\n\nAiyo, Nurse... you sound just like her. Exactly like my wife. She used to point her finger at me just like that whenever I reached for the fridge. I guess I finally have to admit she was the smart one.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "kopi_kosong"
+      }
+    ]
+  },
+  "kopi_kosong": {
+    "text": "you grin cheekily\n\nNext time, I want to see you drinking kopi o kosong in your hand, okay?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Okay, okay! I promise! This time, not even kopi o kosong, I will drink plain water! Hahaha!",
+        "responseExpression": "happy",
+        "responseSpeaker": "character",
+        "next": "end"
+      }
+    ]
+  },
+  "end": {
+    "text": "",
+    "expression": "happy",
+    "speaker": "character",
+    "options": []
+  }
+}

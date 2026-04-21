@@ -1,0 +1,76 @@
+{
+  "metadata": {
+    "id": "uncle_lim_day4_interrupted",
+    "title": "Uncle Lim - Interrupted Pre-Op",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "Good morning, Uncle Li—",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "happy",
+        "responseSpeaker": "player",
+        "next": "ill_be_right_back"
+      }
+    ]
+  },
+  "ill_be_right_back": {
+    "text": "Wait, sorry Uncle, I need to... I'll be right back, okay? Auntie Karen needs something.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "blink_twice"
+      }
+    ]
+  },
+  "blink_twice": {
+    "text": "He blinks twice, mouth pressed into a thin line. Then nods.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "no_wave"
+      }
+    ]
+  },
+  "no_wave": {
+    "text": "Just that. No wave this time.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "turns_away"
+      }
+    ]
+  },
+  "turns_away": {
+    "text": "His hands settle back onto the blanket and he turns toward the window before you've even left.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "Leave",
+        "response": "",
+        "responseExpression": "neutral",
+        "next": "exit"
+      }
+    ]
+  }
+}

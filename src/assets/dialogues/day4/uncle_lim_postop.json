@@ -1,0 +1,300 @@
+{
+  "metadata": {
+    "id": "uncle_lim_day4_postop",
+    "title": "Uncle Lim - Post-Op Recovery",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "You fix your expression before you reach his bed. Smooth it out. Pull the corners up. You're a professional. You're fine.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "sorry_for_wait"
+      }
+    ]
+  },
+  "sorry_for_wait": {
+    "text": "Sorry for the wait, Uncle! Let me check on you properly now.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "smile_holds"
+      }
+    ]
+  },
+  "smile_holds": {
+    "text": "The smile holds for exactly as long as it takes to see his face.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "ceiling_stare"
+      }
+    ]
+  },
+  "ceiling_stare": {
+    "text": "He's looking at the ceiling. Not asleep, not resting, just staring upward at nothing, hands folded over his stomach. He turns to you slowly when he hears your voice, and the smile he offers back is the kind that doesn't reach anywhere.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "Mmm. You're back.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "smile_drops"
+      }
+    ]
+  },
+  "smile_drops": {
+    "text": "Your smile drops without your permission.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "any_pain"
+      }
+    ]
+  },
+  "any_pain": {
+    "text": "Uncle... how are you feeling? Any pain?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "The usual lah.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "quiet_checks"
+      }
+    ]
+  },
+  "quiet_checks": {
+    "text": "You move through his checks quietly. Vitals stable. Wound site clean. You note everything down, filling the silence with the scratch of your pen because neither of you seem to have the right words.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "pain_score"
+      }
+    ]
+  },
+  "pain_score": {
+    "text": "Pain score? One to ten?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Four, maybe.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "let_team_know"
+      }
+    ]
+  },
+  "let_team_know": {
+    "text": "I'll let the team know, we'll get you something for—",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "No need lah. I'm fine.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "eyes_window"
+      }
+    ]
+  },
+  "eyes_window": {
+    "text": "His eyes don't move from the window when he says it.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "look_properly"
+      }
+    ]
+  },
+  "look_properly": {
+    "text": "You lower your clipboard. You look at him properly, really look, past the chart and the vitals and the wound site. He looks smaller today than he did yesterday. Not physically. Just... smaller. Like something has gone out behind his eyes that wasn't gone before.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "sad",
+        "responseSpeaker": "player",
+        "next": "are_you_okay"
+      }
+    ]
+  },
+  "are_you_okay": {
+    "text": "Uncle. Are you okay? Not the pain — I mean... you.",
+    "expression": "sad",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "long_pause"
+      }
+    ]
+  },
+  "long_pause": {
+    "text": "A long pause.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "fidget_again"
+      }
+    ]
+  },
+  "fidget_again": {
+    "text": "He picks at the edge of his blanket the same way he did before the surgery, that same restless fidgeting. Except before, it was nerves. This feels different.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "You know ah, Nurse... I thought after the surgery I would feel... different. Happy, maybe. Relieved.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "trails_off"
+      }
+    ]
+  },
+  "trails_off": {
+    "text": "He trails off. His hands go still.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "I waited so long for this day. But now that it's here... I don't know. The bed still feels the same. The ceiling still looks the same. I thought something would feel different.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "pull_chair"
+      }
+    ]
+  },
+  "pull_chair": {
+    "text": "The words sit between you like something fragile. You think about what to say and come up with nothing that feels like enough. So you pull the chair close to his bed and sit down. You don't say anything. You just stay.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "glances_sideways"
+      }
+    ]
+  },
+  "glances_sideways": {
+    "text": "After a moment, he glances at you sideways.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "Don't you have other patients?",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "question_lands"
+      }
+    ]
+  },
+  "question_lands": {
+    "text": "The question lands somewhere tender.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "think_karen"
+      }
+    ]
+  },
+  "think_karen": {
+    "text": "You think about Karen. About the bell. About the sourness still sitting at the back of your throat.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "happy",
+        "responseSpeaker": "player",
+        "next": "few_minutes"
+      }
+    ]
+  },
+  "few_minutes": {
+    "text": "I have a few minutes, Uncle.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "smallness_eases"
+      }
+    ]
+  },
+  "smallness_eases": {
+    "text": "He doesn't say anything else. Neither do you. But some of the smallness in him eases, just slightly, the way it does when someone decides not to leave.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "Leave",
+        "response": "",
+        "responseExpression": "neutral",
+        "next": "exit"
+      }
+    ]
+  }
+}

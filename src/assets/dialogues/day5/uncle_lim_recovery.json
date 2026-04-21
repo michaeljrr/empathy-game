@@ -1,0 +1,244 @@
+{
+  "metadata": {
+    "id": "uncle_lim_day5_recovery",
+    "title": "Uncle Lim - Recovery Check",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "You approach his bed with the same smile you've been practicing since yesterday. The professional one. The one that stays up regardless.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "morning_uncle"
+      }
+    ]
+  },
+  "morning_uncle": {
+    "text": "Good morning, Uncle Lim! How are we feeling today?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "fixed_on_window"
+      }
+    ]
+  },
+  "fixed_on_window": {
+    "text": "He doesn't look at you right away. He's got his eyes fixed on the window again, the same window, the same nothing outside it.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "Morning.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "just_that"
+      }
+    ]
+  },
+  "just_that": {
+    "text": "Just that.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "run_through_checks"
+      }
+    ]
+  },
+  "run_through_checks": {
+    "text": "Let me run through your checks, okay? Won't take long.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "extends_arm"
+      }
+    ]
+  },
+  "extends_arm": {
+    "text": "He extends his arm without a word. You wrap the cuff around it, the velcro catching the way it always does. You remember rubbing his cold hands before attaching the pulse oximeter two days ago. You don't this time. You're not sure he'd want you to.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "bp_stable"
+      }
+    ]
+  },
+  "bp_stable": {
+    "text": "BP looks stable. That's good news, Uncle.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Mmm.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "how_pain_today"
+      }
+    ]
+  },
+  "how_pain_today": {
+    "text": "How's the pain today? Scale of one to ten?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Same.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "same_as_yesterday"
+      }
+    ]
+  },
+  "same_as_yesterday": {
+    "text": "Same as yesterday? So around a four?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "I said same.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "sharpness"
+      }
+    ]
+  },
+  "sharpness": {
+    "text": "The sharpness of it catches you off guard. You write down four and move on.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "eating_okay"
+      }
+    ]
+  },
+  "eating_okay": {
+    "text": "Are you eating okay? The nurses on the night shift noted you didn't finish your dinner—",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Not hungry lah. Does it matter?",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "body_needs"
+      }
+    ]
+  },
+  "body_needs": {
+    "text": "Uncle, it does matter. Your body needs—",
+    "expression": "sad",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "My body just had a whole operation done to it. Let it rest, can or not?",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "close_mouth"
+      }
+    ]
+  },
+  "close_mouth": {
+    "text": "You close your mouth. You note it down. Appetite reduced. You stare at the words for a moment longer than necessary.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "sad",
+        "responseSpeaker": "player",
+        "next": "anything_you_need"
+      }
+    ]
+  },
+  "anything_you_need": {
+    "text": "Uncle... is there anything you need? Anything I can—",
+    "expression": "sad",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "I'm tired, Nurse.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "turns_away"
+      }
+    ]
+  },
+  "turns_away": {
+    "text": "He pulls the blanket up to his chin and turns onto his side, away from you.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "three_days_ago"
+      }
+    ]
+  },
+  "three_days_ago": {
+    "text": "You stand there for a moment with your clipboard pressed against your chest. Three days ago he was telling you about the Jurong Shipyard and laughing about kopi o kosong. Two days ago he was squeezing your hand before surgery. Yesterday he was quietly falling apart. And today he won't even look at you.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "which_version"
+      }
+    ]
+  },
+  "which_version": {
+    "text": "You don't know which version of him to hold onto.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "Leave",
+        "response": "",
+        "responseExpression": "neutral",
+        "next": "exit"
+      }
+    ]
+  }
+}

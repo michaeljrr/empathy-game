@@ -5,6 +5,8 @@
 import lyliaNeutral from '../assets/images/characters/lylia/lylia_neutral.png';
 import lyliaDisgruntled from '../assets/images/characters/lylia/lylia_disgruntled.png';
 import outsideHospitalBg from '../assets/images/hospital/day1_outsideofhospitalwlylia.png';
+import { SFX, startLoop, fadeOutLoop, playClipped } from '../core/audio';
+import { isInteractKey } from '../core/settings';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -92,11 +94,13 @@ export class Day1EndingScene {
   private readonly INPUT_COOLDOWN_MS = 180;
   private boundKeyDown!: (e: KeyboardEvent) => void;
 
-  // Layout constants (matching DialogueScene)
+  // Layout constants
   private readonly BOX_H = 180;
   private readonly BOX_PAD = 22;
   private readonly MARGIN = 16;
-  private readonly CHAR_MAX_H = 1.3;  // max height the sprite may occupy
+  // Lylia sprite tuning — shared across all ending scenes for a consistent size.
+  private readonly CHAR_MAX_H = 1.2;  // max sprite height as fraction of canvas
+  private readonly CHAR_FOOT  = 1.2;  // feet land at this fraction of canvas
 
   // Colors
   private readonly LYLIA_ACCENT = '#B5748A';
@@ -123,7 +127,7 @@ export class Day1EndingScene {
 
   public activate(): void {
     console.log('[Day1EndingScene] Activating');
-    
+
     this.state = 'FADE_IN';
     this.fadeAlpha = 1;
     this.currentLineIndex = 0;
@@ -131,6 +135,9 @@ export class Day1EndingScene {
     this.titleHoldTimer = 0;
     this.bobTime = 0;
     this.bobOffset = 0;
+
+    // Outside-the-hospital ambience for the whole Lylia chat
+    startLoop(SFX.STREET_VEHICLES, 0.32);
 
     // Load player name
     this.playerName = localStorage.getItem('playerName') || 'Nurse';
@@ -147,6 +154,7 @@ export class Day1EndingScene {
     if (this.boundKeyDown) {
       window.removeEventListener('keydown', this.boundKeyDown);
     }
+    fadeOutLoop(SFX.STREET_VEHICLES, 900);
   }
 
   // ── Dialogue ───────────────────────────────────────────────────────────────
@@ -188,8 +196,18 @@ export class Day1EndingScene {
   private handleKeyDown(e: KeyboardEvent): void {
     if (this.inputCooldown > 0) return;
 
+    // Dev-only silent skip: `\` jumps straight to Day 2 hospital.
+    if (e.key === '\\') {
+      window.dispatchEvent(new CustomEvent('sceneChange', {
+        detail: { scene: 'hospital', startDay: true, dayPatientCount: 2, day: 2 }
+      }));
+      this.state = 'FADE_OUT';
+      return;
+    }
+
     // Advance keys
-    if (e.key === 'e' || e.key === 'E' || e.key === ' ' || e.key === 'Enter') {
+    if (isInteractKey(e)) {
+      playClipped(SFX.CHOICE, 1000, 0.35);
       e.preventDefault();
       
       if (this.state === 'TALKING' && this.isTyping) {
@@ -201,7 +219,10 @@ export class Day1EndingScene {
         this.advanceDialogue();
         this.inputCooldown = this.INPUT_COOLDOWN_MS;
       } else if (this.state === 'SHOW_DAY2' && this.titleHoldTimer >= this.TITLE_HOLD_MS) {
-        // Skip to hospital Day 2
+        // Player confirmed the DAY 2 card — dispatch to hospital Day 2
+        window.dispatchEvent(new CustomEvent('sceneChange', {
+          detail: { scene: 'hospital', startDay: true, dayPatientCount: 2, day: 2 }
+        }));
         this.state = 'FADE_OUT';
         this.inputCooldown = this.INPUT_COOLDOWN_MS;
       }
@@ -242,6 +263,8 @@ export class Day1EndingScene {
         break;
 
       case 'SHOW_DAY2':
+        // Fade the black overlay back out so the title is visible,
+        // then wait for the player to press E (no auto-advance).
         this.fadeAlpha = Math.max(0, this.fadeAlpha - this.FADE_SPEED);
         if (this.titleHoldTimer < this.TITLE_HOLD_MS) {
           this.titleHoldTimer += deltaMs;
@@ -249,13 +272,7 @@ export class Day1EndingScene {
         break;
 
       case 'FADE_OUT':
-        this.fadeAlpha = Math.min(1, this.fadeAlpha + this.FADE_SPEED);
-        if (this.fadeAlpha >= 1) {
-          // Transition to hospital Day 2
-          window.dispatchEvent(new CustomEvent('sceneChange', {
-            detail: { scene: 'hospital', startDay: true, dayPatientCount: 3 }
-          }));
-        }
+        // Scene change dispatched, wait for Game.ts to handle transition
         break;
     }
   }
@@ -280,11 +297,13 @@ export class Day1EndingScene {
 
   // ── Bob ────────────────────────────────────────────────────────────────────
 
+  // Matches DialogueScene's bob exactly: faster & smaller amplitude while talking,
+  // slower & subtler while idle.
   private tickBob(deltaMs: number, speaking: boolean): void {
-    const speed = speaking ? 0.008 : 0.004;
-    const amp = speaking ? 8 : 4;
-    this.bobTime += deltaMs * speed;
-    this.bobOffset = Math.sin(this.bobTime) * amp;
+    this.bobTime += deltaMs;
+    this.bobOffset = speaking
+      ? Math.sin(this.bobTime / 280) * 4
+      : Math.sin(this.bobTime / 800) * 2;
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -355,31 +374,27 @@ export class Day1EndingScene {
     this.renderBox(w, h);
   }
 
+  // Mirrors DialogueScene.drawSprite exactly — same scaling + foot anchor
   private drawLyliaSprite(w: number, h: number): void {
     const expression = this.currentLine.expression || 'neutral';
     const sprite = this.lyliaSprites[expression];
     if (!sprite.loaded) return;
 
     const img = sprite.element;
-    const ctx = this.ctx;
+    const srcW = img.naturalWidth;
+    const srcH = img.naturalHeight;
+    if (!srcW || !srcH) return;
 
-    // Calculate sprite dimensions - positioned higher to keep her in frame
-    const maxH = h * this.CHAR_MAX_H;
-    const footY = h * 0.95; // Position lower (was 1.3) to keep feet visible
-    
-    let dw = img.width;
-    let dh = img.height;
-    
-    if (dh > maxH) {
-      const scale = maxH / dh;
-      dw *= scale;
-      dh = maxH;
-    }
+    // No upscale cap — lets CHAR_MAX_H drive her size even if the PNG is small.
+    const maxDrawH = h * this.CHAR_MAX_H;
+    const scale    = maxDrawH / srcH;
+    const drawW    = srcW * scale;
+    const drawH    = srcH * scale;
 
-    const dx = (w - dw) / 2;
-    const dy = footY - dh + this.bobOffset;
+    const drawX = (w - drawW) / 2;
+    const drawY = h * this.CHAR_FOOT - drawH + this.bobOffset;
 
-    ctx.drawImage(img, dx, dy, dw, dh);
+    this.ctx.drawImage(img, drawX, drawY, drawW, drawH);
   }
 
   private renderBox(w: number, h: number): void {
@@ -451,21 +466,36 @@ export class Day1EndingScene {
 
   private renderDay2Title(w: number, h: number): void {
     const ctx = this.ctx;
+    const ACCENT = '#7a9ab0';
 
-    // Large centered "DAY 2" text
+    // Large centered "DAY 2" text (matches IntroScene DAY 1 style)
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 72px "Segoe UI", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('DAY 2', w / 2, h / 2);
 
+    // Accent lines above/below
+    ctx.strokeStyle = ACCENT;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(w * 0.3, h / 2 - 80);
+    ctx.lineTo(w * 0.7, h / 2 - 80);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(w * 0.3, h / 2 + 64);
+    ctx.lineTo(w * 0.7, h / 2 + 64);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
     // Subtitle hint (if hold timer elapsed)
     if (this.titleHoldTimer >= this.TITLE_HOLD_MS) {
-      const pulse = 0.5 + Math.abs(Math.sin(performance.now() / 420)) * 0.5;
+      const pulse = 0.45 + Math.abs(Math.sin(performance.now() / 500)) * 0.55;
       ctx.globalAlpha = pulse;
       ctx.font = '16px "Segoe UI", sans-serif';
-      ctx.fillStyle = '#AAAAAA';
-      ctx.fillText('Press E to continue', w / 2, h / 2 + 80);
+      ctx.fillStyle = ACCENT;
+      ctx.fillText('Press E to continue', w / 2, h / 2 + 120);
       ctx.globalAlpha = 1;
     }
   }

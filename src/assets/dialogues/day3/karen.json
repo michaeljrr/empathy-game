@@ -1,0 +1,139 @@
+{
+  "metadata": {
+    "id": "karen_day3",
+    "title": "Karen - Call Bell",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "Hi there! I'm your nurse today. I saw you've been ringing, sorry for the wait. What's going on?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Aiya, finally! I press and press, nobody come! How long must I wait? I need water, and also my pillow is not comfortable, and also I need to know when the doctor is coming, and also —",
+        "responseExpression": "agitated",
+        "responseSpeaker": "character",
+        "next": "mc_choice"
+      }
+    ]
+  },
+  "mc_choice": {
+    "text": "",
+    "expression": "agitated",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "Let me get your water first, then we go through everything one by one.",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "refill_water"
+      },
+      {
+        "text": "Okay, okay, I'm here now. Not to worry.",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "refill_water"
+      }
+    ]
+  },
+  "refill_water": {
+    "text": "You refill her water jug from the bedside pitcher and adjust her pillows, stacking them until she gives a reluctant nod of approval.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "better"
+      }
+    ]
+  },
+  "better": {
+    "text": "Better?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "...a bit lah.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "doctor_rounds"
+      }
+    ]
+  },
+  "doctor_rounds": {
+    "text": "The doctor does her rounds in the afternoon, around two or three. If anything urgent comes up before then, just let me know and I'll flag it for her right away, okay?",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Okay. But I also want to ask: this IV drip, why so slow one? My friend said faster is better.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "iv_explanation"
+      }
+    ]
+  },
+  "iv_explanation": {
+    "text": "The rate is set according to what your body needs right now, too fast can actually be hard on your heart and kidneys. The doctor calibrated it specifically for you, so we want to keep it just like this.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Oh. Okay. I never knew that.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "a_beat"
+      }
+    ]
+  },
+  "a_beat": {
+    "text": "A beat.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "embarrassed"
+      }
+    ]
+  },
+  "embarrassed": {
+    "text": "She looks slightly embarrassed, her thumb no longer hovering over the bell.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "Okay. That's all for now.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "farewell"
+      }
+    ]
+  },
+  "farewell": {
+    "text": "",
+    "expression": "neutral",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "Leave",
+        "response": "",
+        "responseExpression": "neutral",
+        "next": "exit"
+      }
+    ]
+  }
+}

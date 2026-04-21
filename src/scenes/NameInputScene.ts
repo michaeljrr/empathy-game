@@ -2,6 +2,8 @@
 //  NameInputScene.ts  —  Player name input in pixel art style
 // ============================================================
 
+import { BGM, fadeOutLoop } from '../core/audio';
+
 export class NameInputScene {
   private canvas: HTMLCanvasElement;
   private ctx:    CanvasRenderingContext2D;
@@ -77,10 +79,12 @@ export class NameInputScene {
     if (this.fadingOut) {
       this.fadeAlpha = Math.min(1, this.fadeAlpha + this.FADE_SPEED);
       if (this.fadeAlpha >= 1) {
-        // Save name to localStorage and proceed to intro
+        // Save name to localStorage and proceed to intro. Fade out the
+        // jovial BGM here — it played across the entry + name-input screens.
         localStorage.setItem('playerName', this.getPlayerName());
-        window.dispatchEvent(new CustomEvent('sceneChange', { 
-          detail: { scene: 'intro' } 
+        fadeOutLoop(BGM.JOVIAL, 1200);
+        window.dispatchEvent(new CustomEvent('sceneChange', {
+          detail: { scene: 'intro' }
         }));
         this.fadingOut = false;
       }

@@ -1,0 +1,132 @@
+{
+  "metadata": {
+    "id": "uncle_lim_day3_postop",
+    "title": "Uncle Lim - Post-Op Check",
+    "defaultMusic": ""
+  },
+  "start": {
+    "text": "Uncle Lim is back. He looks tired and groggy but overall well.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "its_me"
+      }
+    ]
+  },
+  "its_me": {
+    "text": "It's me, Uncle. I'm just going to check on you, okay? Don't try to get up.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "Mmnh…",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "post_op_checks"
+      }
+    ]
+  },
+  "post_op_checks": {
+    "text": "You run through your post-op checks quietly, vitals, wound site, drain output, pain score. He winces slightly when you ask him to rate his pain. He holds up three fingers, then wavers and adds a fourth.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "player",
+        "next": "pain_meds"
+      }
+    ]
+  },
+  "pain_meds": {
+    "text": "Okay, I hear you. I'll let the team know, we'll get you something for the pain soon. You're doing really well, Uncle.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "...it's... done already ah?",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "its_done"
+      }
+    ]
+  },
+  "its_done": {
+    "text": "It's done. Surgery went well. You did great.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "neutral",
+        "responseSpeaker": "empty",
+        "next": "quiet_moment"
+      }
+    ]
+  },
+  "quiet_moment": {
+    "text": "He's quiet for a long moment. You watch his face process it, the weight of thirty-seven months setting itself down somewhere outside his body at last.",
+    "expression": "neutral",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "...I told you... head up…",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "head_up_whole_way"
+      }
+    ]
+  },
+  "head_up_whole_way": {
+    "text": "You did, Uncle. Head up the whole way.",
+    "expression": "happy",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "happy",
+        "responseSpeaker": "empty",
+        "next": "ghost_of_smile"
+      }
+    ]
+  },
+  "ghost_of_smile": {
+    "text": "His eyes drift closed again, but the corners of his mouth turn up, just barely, the ghost of a smile under the oxygen mask.",
+    "expression": "happy",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "",
+        "response": "",
+        "responseExpression": "happy",
+        "responseSpeaker": "empty",
+        "next": "stay_a_moment"
+      }
+    ]
+  },
+  "stay_a_moment": {
+    "text": "You stay a moment longer than you need to. Just to make sure he's settled. That's what you tell yourself.",
+    "expression": "happy",
+    "speaker": "empty",
+    "options": [
+      {
+        "text": "Leave",
+        "response": "",
+        "responseExpression": "happy",
+        "next": "exit"
+      }
+    ]
+  }
+}

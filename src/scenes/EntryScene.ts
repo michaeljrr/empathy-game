@@ -1,5 +1,6 @@
 import entryBg    from '../assets/images/entry/entry_background.png';
 import gameTitleImg from '../assets/images/entry/game_title.png';
+import { SFX, BGM, playOnce, startLoop } from '../core/audio';
 
 export class EntryScene {
   private canvas: HTMLCanvasElement;
@@ -33,6 +34,16 @@ export class EntryScene {
     offsetY: 150,  // shift down from centre (positive = lower half)
   };
 
+  // Settings button sits below Play with the same horizontal centre
+  private readonly SETTINGS_BTN = {
+    width:  220,
+    height:  56,
+    offsetX:  -10,
+    offsetY: 230, // 80 px below Play (56 height + 24 gap)
+  };
+  private settingsButtonHovered = false;
+  private settingsClickFlash = 0;
+
   private get width()  { return (this.canvas as any).logicalWidth  || this.canvas.width;  }
   private get height() { return (this.canvas as any).logicalHeight || this.canvas.height; }
 
@@ -41,6 +52,13 @@ export class EntryScene {
     const cy = this.height / 2 + this.BTN.offsetY;
     return { x: cx - this.BTN.width / 2, y: cy - this.BTN.height / 2,
              width: this.BTN.width, height: this.BTN.height };
+  }
+
+  private get settingsButtonBounds() {
+    const cx = this.width  / 2 + this.SETTINGS_BTN.offsetX;
+    const cy = this.height / 2 + this.SETTINGS_BTN.offsetY;
+    return { x: cx - this.SETTINGS_BTN.width / 2, y: cy - this.SETTINGS_BTN.height / 2,
+             width: this.SETTINGS_BTN.width, height: this.SETTINGS_BTN.height };
   }
 
   constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
@@ -63,6 +81,11 @@ export class EntryScene {
       'url(https://fonts.gstatic.com/s/pressstart2p/v15/e3t4euO8T-267oIAQAu6jDQyK3nVivM.woff2)'
     );
     pf.load().then(f => { document.fonts.add(f); this.fontLoaded = true; }).catch(() => {});
+
+    // Jovial BGM loops while the entry screen is up. Autoplay may be blocked
+    // until the first user interaction; that's fine — the sound starts on
+    // hover/click or when the player returns to the main menu later.
+    startLoop(BGM.JOVIAL, 0.35);
   }
 
   private setupEventListeners(): void {
@@ -76,6 +99,21 @@ export class EntryScene {
     this.canvas.removeEventListener('mousemove', this.boundMouseMove);
     this.canvas.removeEventListener('click',     this.boundClick);
     this.canvas.style.cursor = 'default';
+    // Jovial BGM keeps playing into the NameInput screen — it's stopped
+    // (with a fade) when the player finalises their name.
+  }
+
+  // Re-binds mouse listeners when returning to the entry screen (e.g. from
+  // Day 6's "Back to Main" button). Safe to call even if already active.
+  public activate(): void {
+    this.canvas.removeEventListener('mousemove', this.boundMouseMove);
+    this.canvas.removeEventListener('click',     this.boundClick);
+    this.setupEventListeners();
+    this.playButtonHovered = false;
+    this.clickFlash = 0;
+    // Resume the jovial BGM on re-entry (e.g. via Back to Main). It'll keep
+    // playing across the name-input screen and only fade out on submit.
+    startLoop(BGM.JOVIAL, 0.35);
   }
 
   private getCanvasCoordinates(e: MouseEvent): { x: number; y: number } {
@@ -87,25 +125,39 @@ export class EntryScene {
 
   private handleMouseMove(e: MouseEvent): void {
     const { x, y } = this.getCanvasCoordinates(e);
-    this.playButtonHovered = this.isPointInButton(x, y);
-    this.canvas.style.cursor = this.playButtonHovered ? 'pointer' : 'default';
+
+    const playWas = this.playButtonHovered;
+    const setWas  = this.settingsButtonHovered;
+    this.playButtonHovered     = this.isPointInButton(x, y, this.playButtonBounds);
+    this.settingsButtonHovered = this.isPointInButton(x, y, this.settingsButtonBounds);
+
+    // Hover-enter blips
+    if (this.playButtonHovered && !playWas)     playOnce(SFX.ITEM, 0.4);
+    if (this.settingsButtonHovered && !setWas)  playOnce(SFX.ITEM, 0.4);
+
+    this.canvas.style.cursor = (this.playButtonHovered || this.settingsButtonHovered) ? 'pointer' : 'default';
   }
 
   private handleClick(e: MouseEvent): void {
     const { x, y } = this.getCanvasCoordinates(e);
-    if (this.isPointInButton(x, y)) {
+    if (this.isPointInButton(x, y, this.playButtonBounds)) {
       this.clickFlash = 10;
       window.dispatchEvent(new CustomEvent('sceneChange', { detail: { scene: 'nameInput' } }));
+      return;
+    }
+    if (this.isPointInButton(x, y, this.settingsButtonBounds)) {
+      this.settingsClickFlash = 10;
+      window.dispatchEvent(new CustomEvent('sceneChange', { detail: { scene: 'settings' } }));
     }
   }
 
-  private isPointInButton(x: number, y: number): boolean {
-    const b = this.playButtonBounds;
+  private isPointInButton(x: number, y: number, b: { x: number; y: number; width: number; height: number }): boolean {
     return x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height;
   }
 
   public update(): void {
     if (this.clickFlash > 0) this.clickFlash--;
+    if (this.settingsClickFlash > 0) this.settingsClickFlash--;
   }
 
   public render(): void {
@@ -134,15 +186,18 @@ export class EntryScene {
       ctx.drawImage(this.titleImage, tx, ty, tw, th);
     }
 
-    // Pixel-art style play button
-    this.drawPixelButton();
+    // Pixel-art style buttons
+    this.drawPixelButton(this.playButtonBounds, 'PLAY', this.playButtonHovered, this.clickFlash > 0);
+    this.drawPixelButton(this.settingsButtonBounds, 'SETTINGS', this.settingsButtonHovered, this.settingsClickFlash > 0);
   }
 
-  private drawPixelButton(): void {
-    const ctx     = this.ctx;
-    const b       = this.playButtonBounds;
-    const hovered = this.playButtonHovered;
-    const pressed = this.clickFlash > 0;
+  private drawPixelButton(
+    b: { x: number; y: number; width: number; height: number },
+    label: string,
+    hovered: boolean,
+    pressed: boolean,
+  ): void {
+    const ctx = this.ctx;
 
     // ─ Palette ─────────────────────────────────────────
     const CREAM   = '#f5f0e8';              // label face
@@ -197,9 +252,9 @@ export class EntryScene {
     const cy = y + h / 2;
     // 1-pixel hard drop shadow (down only, no x-offset, keeps text sharp)
     ctx.fillStyle = NAVY;
-    ctx.fillText('PLAY', cx, cy + 1);
+    ctx.fillText(label, cx, cy + 1);
     // Main label on top
     ctx.fillStyle = pressed ? '#ffffff' : TEAL;
-    ctx.fillText('PLAY', cx, cy);
+    ctx.fillText(label, cx, cy);
   }
 }

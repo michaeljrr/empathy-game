@@ -1,5 +1,7 @@
 import { Player } from '../entities/Player';
 import { Patient } from '../entities/Patient';
+import { SFX, BGM, playOnce, playClipped, startLoop, stopLoop, fadeOutLoop } from '../core/audio';
+import { isInteractKey, isMoveLeftKey, isMoveRightKey } from '../core/settings';
 import wardEmptyBg from '../assets/images/hospital/hospitalbg.png';
 import patientA_in_bed from '../assets/images/hospital/patientA_in_bed.png';
 import patientB_in_bed from '../assets/images/hospital/patientB_in_bed.png';
@@ -9,6 +11,9 @@ import pagerImg from '../assets/images/ui/pager.png';
 import phoneImg from '../assets/images/items/phone.png';
 import lyliaNeutral from '../assets/images/characters/lylia/lylia_neutral.png';
 import nurseHappy from '../assets/images/characters/nurse/nurse_happy.png';
+import yingYingSprite from '../assets/images/characters/yingying/Ying ying.png';
+
+type SceneType = 'entry' | 'nameInput' | 'intro' | 'hospital' | 'dialogue' | 'day1Ending' | 'day2Ending' | 'day3Ending' | 'day4Ending' | 'day5Ending' | 'day6Ending';
 
 export class HospitalScene {
   private canvas: HTMLCanvasElement;
@@ -60,6 +65,8 @@ export class HospitalScene {
   // Mouse tracking for hover
   private mouseX: number = 0;
   private mouseY: number = 0;
+  private pagerWasHovered: boolean = false;
+  private phoneWasHovered: boolean = false;
   private boundMouseMove: (e: MouseEvent) => void;
   private boundClick: (e: MouseEvent) => void;
   
@@ -89,11 +96,14 @@ export class HospitalScene {
   private phoneBobOffset: number = 0;
   private phoneBobTime: number = 0;
   
-  // Phone dialogue scripts
-  private readonly PHONE_DIALOGUES = [
+  // Phone dialogue scripts (configurable for different days)
+  private PHONE_DIALOGUES = [
     { speaker: 'Lylia', text: 'eh you done yet? would you like to go home together', accentColor: '#B5748A', sprite: 'lylia' },
-    { speaker: 'player', text: 'sure', accentColor: '#5AC57A', sprite: 'lylia' } // Changed to 'player' and keep lylia sprite
+    { speaker: 'player', text: 'sure', accentColor: '#5AC57A', sprite: 'lylia' }
   ];
+  
+  // Target ending scene after phone dialogue completes
+  private phoneTargetScene: SceneType = 'day1Ending';
   
   // ── Phone UI Layout Configuration (configurable) ──────────────────────────
   // You can now adjust phone image position, size, and content area independently:
@@ -119,19 +129,28 @@ export class HospitalScene {
     screenColor: '#95b899', // Sage green screen background
     
     // Dialogue box position within content area
-    dialogueBoxBottomMargin: 30, // Space from bottom of content area
+    dialogueBoxBottomMargin: 0, // Space from bottom of content area
     dialogueBoxHeight: 140,
     dialogueBoxPadding: 18,
     
     // Sprite position within content area
-    spritePadding: 25,
-    spriteMaxHeight: 340, // Max height for character sprite
+    spritePadding: 60,
+    spriteMaxHeight: 540, // Max height for character sprite
   };
   
+  // ── Day indicator (top-right) ─────────────────────────────────────────────
+  private readonly DAY_INDICATOR = {
+    rightOffset: 30,
+    y: 30,
+    width: 160,
+    height: 50,
+    backdropRadius: 12,
+  };
+
   // ── Pager UI Configuration (adjust these for size/position) ────────────────
   private readonly PAGER_CONFIG = {
     x: 30,           // X position from left edge
-    y: 30,           // Y position from top edge
+    y: 30,           // Y position from top edge (back to original — day indicator moved to top-right)
     width: 100,       // Width of pager image
     height: 135,      // Height of pager image (maintaining aspect ratio)
     badgeOffsetX: -20, // Badge X offset from top-right corner of pager
@@ -219,8 +238,13 @@ export class HospitalScene {
     this.lyliaSprite.src = lyliaNeutral;
     this.lyliaSprite.onload = () => { this.lyliaSpriteLoaded = true; };
     
+    // The "nurse" sprite slot on the phone popup is used for Ying Ying's
+    // colleague texts (Day 5 + Day 6 intro). If her dedicated asset ever
+    // fails to load, the fall-back generic nurse sprite (nurseHappy) will
+    // still be swapped in via the naturalWidth check below.
     this.nurseSprite     = new Image();
-    this.nurseSprite.src = nurseHappy;
+    this.nurseSprite.src = yingYingSprite;
+    this.nurseSprite.onerror = () => { this.nurseSprite.src = nurseHappy; };
 
     this.player = new Player(800, 680);
     
@@ -286,7 +310,7 @@ export class HospitalScene {
   ): void {
     // Set images
     this.setBedImages(bedA?.image, bedB?.image, bedC?.image, bedD?.image);
-    
+
     // Update bedCharacterMap - only include beds with patients
     this.bedCharacterMap = {};
     if (bedA?.characterId) this.bedCharacterMap['Bed 1'] = bedA.characterId;
@@ -294,6 +318,47 @@ export class HospitalScene {
     if (bedC?.characterId) this.bedCharacterMap['Bed 3'] = bedC.characterId;
     if (bedD?.characterId) this.bedCharacterMap['Bed 4'] = bedD.characterId;
     if (bedE?.characterId) this.bedCharacterMap['Bed 5'] = bedE.characterId;
+
+    // Enable/disable interaction zones based on whether beds have patients
+    this.ZONES[0].enabled = !!bedA?.characterId;
+    this.ZONES[1].enabled = !!bedB?.characterId;
+    this.ZONES[2].enabled = !!bedC?.characterId;
+    this.ZONES[3].enabled = !!bedD?.characterId;
+
+    // Reset bed A visibility whenever beds are reconfigured
+    this.bedAVisible = !!bedA?.characterId;
+  }
+
+  // ── Set current day (triggers day-specific mechanics) ────────────────────
+  public setCurrentDay(day: number): void {
+    this.currentDay = day;
+    this.postOpReturnTriggered = false;
+    this.postOpReturnState = 'none';
+    this.postOpFadeAlpha = 0;
+    this.bellTimer = 0;
+    // Bell activates on Day 3 immediately; on Day 4 the bell starts AFTER
+    // the forced Bed A pre-op interaction unlocks Bed D (handled in completeBed).
+    this.bellActive = (day === 3);
+    // Day 4: Bed D is locked until Bed A (Uncle Lim pre-op) is visited first
+    if (day === 4) {
+      this.ZONES[3].enabled = false;
+      // Day 4 opens with MC being forced over to Bed A for the interrupted pre-op
+      this.forcedBedAActive = true;
+      this.forcedBedASettleFrames = 0;
+    }
+    // Day 3 opens with the pager beeping (from startDay) followed immediately
+    // by Karen's call bell ringing — she's already pressing
+    if (day === 3) {
+      window.setTimeout(() => playOnce(SFX.BELL, 0.55), 2000);
+    }
+  }
+
+  public setPhoneDialogue(
+    dialogues: Array<{ speaker: string; text: string; accentColor: string; sprite: string }>,
+    targetScene: SceneType = 'day1Ending'
+  ): void {
+    this.PHONE_DIALOGUES = dialogues;
+    this.phoneTargetScene = targetScene;
   }
 
   private setupPatients(): void {
@@ -311,9 +376,29 @@ export class HospitalScene {
     // ← Hard gate: do nothing if hospital is not the active scene
     if (!this.isActive) return;
 
+    // Dev-only silent skip: `\` fast-forwards through popups/completion sequences.
+    if (e.key === '\\') {
+      if (this.phonePopupActive) {
+        // Close popup and jump straight to its target scene
+        const target = this.phoneTargetScene;
+        this.closePhonePopup();
+        window.dispatchEvent(new CustomEvent('sceneChange', { detail: { scene: target } }));
+        return;
+      }
+      if (this.completionSequenceActive) {
+        this.completionSequenceActive = false;
+        this.completionTextDisplayed = false;
+        this.setPhoneNotifications(1);
+        return;
+      }
+      // On the ward itself — nothing to skip; fall through silently.
+      return;
+    }
+
     // Handle phone popup dialogue
     if (this.phonePopupActive) {
-      if (e.key === 'e' || e.key === 'E' || e.key === 'Enter' || e.key === ' ') {
+      if (isInteractKey(e)) {
+        playClipped(SFX.CHOICE, 1000, 0.35);
         this.advancePhoneDialogue();
         return;
       }
@@ -321,7 +406,8 @@ export class HospitalScene {
 
     // Handle completion sequence text box
     if (this.completionSequenceActive && this.completionTextDisplayed) {
-      if (e.key === 'e' || e.key === 'E' || e.key === 'Enter' || e.key === ' ') {
+      if (isInteractKey(e)) {
+        playClipped(SFX.CHOICE, 1000, 0.35);
         console.log('[HospitalScene] Dismissing completion text box');
         this.completionSequenceActive = false;
         this.completionTextDisplayed = false;
@@ -332,7 +418,7 @@ export class HospitalScene {
     }
 
     this.keys[e.key] = true;
-    if (e.key === 'e' || e.key === 'E') {
+    if (isInteractKey(e)) {
       this.checkInteraction();
     }
   }
@@ -359,6 +445,7 @@ export class HospitalScene {
           return;
         }
         this.isTransitioning = true; // Block further input during transition
+        playClipped(SFX.CHOICE, 1000, 0.5); // Confirm blip on bed selection (clipped to 1 s)
         window.dispatchEvent(new CustomEvent('sceneChange', {
           detail: { scene: 'dialogue', characterId, bedLocation: patient.location }
         }));
@@ -372,12 +459,49 @@ export class HospitalScene {
   // ox/oy   = shift the trigger zone from bed centre
   // promptOx/promptOy = shift the "Press E" label from bed centre
   // enabled = false disables the interaction zone entirely for that bed
-  private readonly ZONES = [
+  // (mutable so setBedDay can enable/disable per day)
+  private ZONES = [
     { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: 0, promptOy: -100, enabled: true  },  // Bed A
     { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: -10, promptOy: -100, enabled: true  },  // Bed B
     { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: -60, promptOy: -100, enabled: true  },  // Bed C
     { hw: 150, hh: 1000, ox: 0, oy: 0, promptOx: -80, promptOy: -100, enabled: false },  // Bed D
   ];
+
+  // ── Day 3: Post-op return + bell timer mechanics ─────────────────────────
+  private currentDay: number = 1;
+  private postOpReturnTriggered: boolean = false;
+  // Kept for the no-op branches left in startDay/activate so nothing downstream
+  // breaks; the post-op return itself no longer animates through states.
+  private postOpReturnState: 'none' = 'none';
+  private postOpFadeAlpha: number = 0;
+
+  // Bell timer — Bed D pager escalates while unvisited (Day 3 only)
+  private bellActive: boolean = false;
+  private bellTimer: number = 0;
+  private readonly BELL_INTERVAL_MS: number = 30000;
+  // How many bell-driven notifications have piled up on the pager. When Bed D
+  // is finally visited, this amount is subtracted from the pager (on top of
+  // the normal −1 for completing that bed), matching the narrative that the
+  // "ignored calls" are all resolved by the one visit.
+  private bellNotificationsAdded: number = 0;
+
+  // Per-day bed sprite visibility (Day 3 only: Uncle Lim's bed fades out after pre-op)
+  private bedAVisible: boolean = true;
+  private bedAFadeAlpha: number = 1.0;
+  private bedAFading: boolean = false;
+  private readonly BED_A_FADE_SPEED: number = 0.015; // fade over ~1s at 60fps
+
+  // Day 4 forced interaction: MC is auto-walked to Bed A at day start, then
+  // the interrupted pre-op dialogue is triggered automatically.
+  private forcedBedAActive: boolean = false;
+  private forcedBedASettleFrames: number = 0;
+  private readonly FORCED_MOVE_SPEED: number = 3;
+  private readonly BED_A_TARGET_X: number = 325;
+  private readonly BED_A_TARGET_Y: number = 680;
+
+  // When set, Game.ts will redirect the next sceneChange to this scene
+  // instead of returning to hospital. Consumed by takePendingSceneOverride().
+  private pendingSceneOverride: SceneType | null = null;
 
   private isPlayerNearHitbox(patient: Patient): boolean {
     const i = this.patients.indexOf(patient);
@@ -395,12 +519,35 @@ export class HospitalScene {
     this.isActive = true;
     this.isTransitioning = false; // Reset transition flag when returning to scene
     this.keys     = {}; // clear any held keys from before
+    // Safety: the post-op dispatch leaves the overlay fully black when it
+    // hands off to the dialogue scene. Clear it on re-entry so the ward
+    // doesn't come back under a black veil.
+    if (this.postOpReturnState === 'none' && this.postOpFadeAlpha > 0) {
+      this.postOpFadeAlpha = 0;
+    }
+    // Hospital ambience — plays whenever the player is on the ward, pauses
+    // while they're in a dialogue (because deactivate fades it out below).
+    startLoop(SFX.HOSPITAL_AMBIENT, 0.28);
   }
 
   // ── Initialize pager for a new day ───────────────────────────────────────
   public startDay(patientCount: number): void {
     this.pagerNotifications = patientCount;
     this.completedBeds = new Set();
+    this.postOpReturnTriggered = false;
+    this.postOpReturnState = 'none';
+    this.postOpFadeAlpha = 0;
+    this.bellTimer = 0;
+    this.bellNotificationsAdded = 0;
+    this.bedAVisible = true;
+    this.bedAFadeAlpha = 1.0;
+    this.bedAFading = false;
+    this.forcedBedAActive = false;
+    this.forcedBedASettleFrames = 0;
+    // Pager beeps for 2s when the day's notifications arrive
+    if (patientCount > 0) {
+      playClipped(SFX.PAGER_BEEP, 2000, 0.45);
+    }
   }
 
   // ── Mouse move handler ────────────────────────────────────────────────────
@@ -415,16 +562,23 @@ export class HospitalScene {
   // ── Click handler ─────────────────────────────────────────────────────────
   private onClick(_e: MouseEvent): void {
     if (!this.isActive) return;
-    
+
     // If phone popup is active, handle dialogue progression
     if (this.phonePopupActive) {
       this.advancePhoneDialogue();
       return;
     }
-    
-    // Check if phone icon was clicked
+
+    // Phone icon click (with notifications) → open popup
     if (this.isMouseOverPhone() && this.phoneNotifications > 0) {
+      playOnce(SFX.ITEM, 0.45);
       this.openPhonePopup();
+      return;
+    }
+
+    // Plain pager/phone clicks (no popup to open) still get a UI blip
+    if (this.isMouseOverPager() || this.isMouseOverPhone()) {
+      playOnce(SFX.ITEM, 0.45);
     }
   }
 
@@ -435,6 +589,14 @@ export class HospitalScene {
     this.phonePopupY = this.height; // Start off-screen at bottom
     this.phonePopupTargetY = this.height - this.PHONE_POPUP_HEIGHT; // Target position
     this.phoneDialogueStep = 0;
+    playClipped(SFX.PHONE_MSG, 1000, 0.45);
+    // Day 3's phone beat with Lylia is scripted as [BGM: sad TUNE]
+    if (this.currentDay === 3) {
+      startLoop(BGM.EMOTIONAL_CONTEMPLATIVE, 0.28);
+    }
+    // Day 5's phone beat (Ying Ying asking about Lylia) leans on the
+    // ward ambience — the hospital ambient loop is already running through
+    // HospitalScene, so no extra track is added here.
     this.startPhoneTypewriter(this.PHONE_DIALOGUES[0].text);
   }
 
@@ -461,16 +623,18 @@ export class HospitalScene {
     // If text is complete, move to next step
     if (this.phoneTextComplete) {
       this.phoneDialogueStep++;
-      
+
       if (this.phoneDialogueStep < this.PHONE_DIALOGUES.length) {
+        // Message send/receive blip as each new message appears
+        playClipped(SFX.PHONE_MSG, 1000, 0.45);
         // Show next dialogue
         this.startPhoneTypewriter(this.PHONE_DIALOGUES[this.phoneDialogueStep].text);
       } else {
         // Phone dialogue complete - transition to ending scene
         this.closePhonePopup();
-        console.log('[HospitalScene] Phone dialogue complete, transitioning to Day1EndingScene');
+        console.log(`[HospitalScene] Phone dialogue complete, transitioning to ${this.phoneTargetScene}`);
         window.dispatchEvent(new CustomEvent('sceneChange', {
-          detail: { scene: 'day1Ending' }
+          detail: { scene: this.phoneTargetScene }
         }));
       }
     }
@@ -481,6 +645,16 @@ export class HospitalScene {
     console.log('[HospitalScene] Closing phone popup');
     this.phonePopupActive = false;
     this.phoneNotifications = 0; // Clear notification badge
+    // Fade any phone-scene BGM (noop if not running)
+    fadeOutLoop(BGM.EMOTIONAL_CONTEMPLATIVE, 900);
+  }
+
+  // Game.ts calls this right after completeBed to see if the next scene
+  // transition should be redirected (e.g. Day 6 Bed A → day6Ending).
+  public takePendingSceneOverride(): SceneType | null {
+    const s = this.pendingSceneOverride;
+    this.pendingSceneOverride = null;
+    return s;
   }
 
   // ── Mark a bed as completed ──────────────────────────────────────────────
@@ -488,13 +662,91 @@ export class HospitalScene {
     if (!this.completedBeds.has(bedLocation)) {
       this.completedBeds.add(bedLocation);
       this.pagerNotifications = Math.max(0, this.pagerNotifications - 1);
-      
-      // Check if all patients have been seen (day 1 has 3 patients)
+
+      // Day 6: Bed A is the one-and-only interaction — redirect directly to day6Ending
+      if (this.currentDay === 6 && bedLocation === 'Bed 1') {
+        console.log('[HospitalScene] Day 6 Bed A done - redirecting to day6Ending');
+        this.pendingSceneOverride = 'day6Ending';
+        return;
+      }
+
+      // Days 3 & 4: stop the bell timer once Bed D (Karen) is visited, and
+      // clear the pile of bell-added notifications from the pager.
+      if ((this.currentDay === 3 || this.currentDay === 4) && bedLocation === 'Bed 4') {
+        this.bellActive = false;
+        if (this.bellNotificationsAdded > 0) {
+          this.pagerNotifications = Math.max(0, this.pagerNotifications - this.bellNotificationsAdded);
+          console.log('[HospitalScene] Bed D visited — cleared', this.bellNotificationsAdded,
+                      'bell-added notifications; pager →', this.pagerNotifications);
+          this.bellNotificationsAdded = 0;
+        }
+      }
+
+      // Day 4: unlock Bed D once Bed A pre-op interaction has happened, and
+      // kick off the same bell-escalation mechanic Day 3 uses.
+      if (this.currentDay === 4 && bedLocation === 'Bed 1' && !this.postOpReturnTriggered) {
+        this.ZONES[3].enabled = true;
+        this.bellActive = true;
+        this.bellTimer = 0;
+      }
+
+      // Day 3 only: after Uncle Lim's pre-op, fade his bed sprite + shadow
+      // out of the ward (he's been taken to surgery). Day 4's interrupted
+      // pre-op leaves him in the bed.
+      if (this.currentDay === 3 && bedLocation === 'Bed 1' && !this.postOpReturnTriggered) {
+        this.bedAFading = true;
+      }
+
+      // Day 3 & 4: first time pager hits 0 → trigger post-op return instead of completion
+      if (this.pagerNotifications === 0 && (this.currentDay === 3 || this.currentDay === 4) && !this.postOpReturnTriggered) {
+        this.postOpReturnTriggered = true;
+        this.startPostOpReturn();
+        return;
+      }
+
+      // Day 3 & 4: post-op check complete → skip empty-bed sequence, go straight to phone
+      if (this.pagerNotifications === 0 && (this.currentDay === 3 || this.currentDay === 4)
+          && this.postOpReturnTriggered && bedLocation === 'Bed 1') {
+        console.log('[HospitalScene] Day ' + this.currentDay + ' post-op complete - triggering phone notification');
+        this.setPhoneNotifications(1);
+        return;
+      }
+
+      // Check if all patients have been seen.
+      // Day 1 plays the "walk to Bed D + empty-bed text" sequence; every other
+      // day skips straight to the phone notification (on Days 2+ Bed D isn't
+      // narratively empty, so the walk and line don't apply).
       if (this.pagerNotifications === 0 && !this.completionSequenceActive) {
-        console.log('[HospitalScene] All patients seen - starting completion sequence');
-        this.startCompletionSequence();
+        if (this.currentDay === 1) {
+          console.log('[HospitalScene] Day 1 complete - starting Bed D walk sequence');
+          this.startCompletionSequence();
+        } else {
+          console.log('[HospitalScene] Day ' + this.currentDay + ' complete - triggering phone notification directly');
+          this.setPhoneNotifications(1);
+        }
       }
     }
+  }
+
+  // ── Day 3/4: post-op return ──────────────────────────────────────────────
+  // No fade — the swap happens instantly once all pre-op beds are cleared.
+  // Bed A simply re-appears in the ward with a fresh pager notification.
+  private startPostOpReturn(): void {
+    console.log('[HospitalScene] Day ' + this.currentDay + ' post-op return — re-adding Bed A');
+    this.completedBeds.delete('Bed 1');
+    this.bedCharacterMap['Bed 1'] = this.currentDay === 4
+      ? 'day4patientA_postop'
+      : 'day3patientA_postop';
+    this.ZONES[0].enabled = true;
+    this.bedAVisible = true;
+    this.bedAFadeAlpha = 1.0;
+    this.bedAFading = false;
+    this.setPhoneNotifications(0); // keep phone silent until the post-op dialogue wraps
+    this.pagerNotifications += 1;
+    playClipped(SFX.PAGER_BEEP, 1500, 0.45); // notification beep for the new pager
+    // Ensure any leftover state-machine fields are inert
+    this.postOpReturnState = 'none';
+    this.postOpFadeAlpha = 0;
   }
   
   // ── Start day completion sequence ─────────────────────────────────────────
@@ -509,6 +761,11 @@ export class HospitalScene {
   public deactivate(): void {
     this.isActive = false;
     this.keys     = {};
+    // Stop looping SFX so it doesn't bleed into dialogue/ending scenes.
+    // Footsteps stops instantly (already near silent anyway); hospital
+    // ambience fades gracefully so the transition into dialogue isn't abrupt.
+    stopLoop(SFX.FOOTSTEPS);
+    fadeOutLoop(SFX.HOSPITAL_AMBIENT, 700);
   }
 
   // cleanup kept for compatibility — deactivate is the main mechanism now
@@ -520,7 +777,7 @@ export class HospitalScene {
     this.activate();
   }
 
-  public update(): void {
+  public update(delta: number = 16.67): void {
     if (!this.isActive) return;
 
     // Update pager floating animation
@@ -528,13 +785,38 @@ export class HospitalScene {
     if (this.pagerFloatOffset > Math.PI * 2) {
       this.pagerFloatOffset -= Math.PI * 2;
     }
-    
+
     // Update phone floating animation (slightly offset for variety)
     this.phoneFloatOffset += this.PHONE_CONFIG.floatSpeed;
     if (this.phoneFloatOffset > Math.PI * 2) {
       this.phoneFloatOffset -= Math.PI * 2;
     }
-    
+
+    // ── Day 3 & 4: Bell timer — Bed D pager escalates while unvisited ─────
+    if (this.bellActive && (this.currentDay === 3 || this.currentDay === 4) && !this.phonePopupActive
+        && !this.completionSequenceActive && this.postOpReturnState === 'none') {
+      this.bellTimer += delta;
+      if (this.bellTimer >= this.BELL_INTERVAL_MS) {
+        this.bellTimer = 0;
+        this.pagerNotifications += 1;
+        this.bellNotificationsAdded += 1;
+        playOnce(SFX.BELL, 0.5);
+        console.log('[HospitalScene] Bell: Bed D pager incremented →', this.pagerNotifications,
+                    '(bell-added so far:', this.bellNotificationsAdded + ')');
+      }
+    }
+
+    // ── Bed A fade-out (Day 3/4: Uncle Lim leaves for surgery) ─────────────
+    if (this.bedAFading && this.bedAFadeAlpha > 0) {
+      this.bedAFadeAlpha = Math.max(0, this.bedAFadeAlpha - this.BED_A_FADE_SPEED);
+      if (this.bedAFadeAlpha <= 0) {
+        this.bedAFading = false;
+        this.bedAVisible = false;
+      }
+    }
+
+    // Post-op return is now instantaneous (no fade) — no per-frame work here.
+
     // ── Phone popup animation and typewriter ───────────────────────────────
     if (this.phonePopupActive) {
       // Animate popup sliding up
@@ -564,6 +846,45 @@ export class HospitalScene {
       
       // Don't process other updates while phone popup is active
       return;
+    }
+
+    // Day 4: forced auto-walk to Bed A → auto-dispatch the interrupted pre-op
+    // dialogue. Same mechanic as Day 1's end-of-day auto-walk to Bed D,
+    // applied at day start.
+    if (this.forcedBedAActive) {
+      const dx = this.BED_A_TARGET_X - this.player.x;
+      const dy = this.BED_A_TARGET_Y - this.player.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance > 20) {
+        const moveX = (dx / distance) * this.FORCED_MOVE_SPEED;
+        const moveY = (dy / distance) * this.FORCED_MOVE_SPEED;
+        this.player.move(moveX, moveY, this.width, this.height, this.movementBounds);
+        this.forcedBedASettleFrames = 0;
+        startLoop(SFX.FOOTSTEPS, 0.35);
+        this.player.update();
+      } else {
+        // Reached — snap, settle briefly, then auto-trigger the dialogue
+        if (this.forcedBedASettleFrames === 0) {
+          this.player.x = this.BED_A_TARGET_X;
+          this.player.y = this.BED_A_TARGET_Y;
+          this.player.move(0, 0, this.width, this.height, this.movementBounds);
+          this.player.update();
+          stopLoop(SFX.FOOTSTEPS);
+        }
+        this.forcedBedASettleFrames++;
+        if (this.forcedBedASettleFrames > 8) {
+          const characterId = this.bedCharacterMap['Bed 1'];
+          if (characterId) {
+            this.isTransitioning = true;
+            window.dispatchEvent(new CustomEvent('sceneChange', {
+              detail: { scene: 'dialogue', characterId, bedLocation: 'Bed 1' }
+            }));
+          }
+          this.forcedBedAActive = false;
+        }
+      }
+      return; // block other updates during forced walk
     }
 
     // Handle completion sequence animation
@@ -607,14 +928,22 @@ export class HospitalScene {
 
     const speed = 5;
     let dx = 0;
-    
-    // Horizontal movement only (left-right)
-    if (this.keys['ArrowLeft']  || this.keys['a']) dx = -speed;
-    if (this.keys['ArrowRight'] || this.keys['d']) dx =  speed;
+
+    // Horizontal movement only (left-right) — uses the player's keybinds
+    const heldKeys = Object.keys(this.keys).filter(k => this.keys[k]);
+    if (heldKeys.some(isMoveLeftKey))  dx = -speed;
+    if (heldKeys.some(isMoveRightKey)) dx =  speed;
     // Vertical movement disabled - only left/right allowed
 
+    // Footsteps loop while the player is actively moving horizontally
+    if (dx !== 0) {
+      startLoop(SFX.FOOTSTEPS, 0.35);
+    } else {
+      stopLoop(SFX.FOOTSTEPS);
+    }
+
     this.player.move(dx, 0, this.width, this.height, this.movementBounds);
-    
+
     this.player.update();
   }
 
@@ -626,8 +955,11 @@ export class HospitalScene {
       ctx.fillStyle = '#e8e4d8';
       ctx.fillRect(0, 0, this.width, this.height);
     }
-    if (this.patientALoaded) {
+    if (this.patientALoaded && this.bedAVisible && this.bedAFadeAlpha > 0) {
+      ctx.save();
+      ctx.globalAlpha = this.bedAFadeAlpha;
       ctx.drawImage(this.patientAElement, 0, 100, 650, 812);
+      ctx.restore();
     }
     if (this.patientBLoaded) {
       ctx.drawImage(this.patientBElement, 300, 100, 650, 812);
@@ -643,7 +975,12 @@ export class HospitalScene {
     for (const patient of this.patients) {
       if (this.isPlayerNearHitbox(patient) && this.bedCharacterMap[patient.location]) this.drawInteractionPrompt(patient);
     }
+    // Days 3 & 4: pulsing bell above Bed D while Karen is still pressing the call button
+    if (this.bellActive && (this.currentDay === 3 || this.currentDay === 4)) {
+      this.drawBedDBell();
+    }
     this.player.render(ctx);
+    this.drawDayIndicator();
     this.drawPagerUI();
     this.drawPhoneUI();
     
@@ -656,7 +993,7 @@ export class HospitalScene {
     if (this.phonePopupActive) {
       this.drawPhonePopup();
     }
-    
+
     this.drawUI();
   }
 
@@ -685,24 +1022,29 @@ export class HospitalScene {
 
   private drawBedShadows(): void {
     const ctx = this.ctx;
+
+    // Bed A shadow fades in step with the Bed A sprite (Day 3/4 post-op hand-off)
+    const alphaA = 0.2 * (this.bedAVisible ? this.bedAFadeAlpha : 0);
+    if (alphaA > 0) {
+      ctx.fillStyle = `rgba(0, 0, 0, ${alphaA})`;
+      ctx.beginPath();
+      ctx.ellipse(300, 800, 130, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
 
-    // PatientA bed 
-    ctx.beginPath();
-    ctx.ellipse(300, 800, 130, 18, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // PatientB bed 
+    // PatientB bed
     ctx.beginPath();
     ctx.ellipse(600, 800, 130, 18, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // PatientC bed 
+    // PatientC bed
     ctx.beginPath();
     ctx.ellipse(900, 800, 130, 18, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // PatientD bed 
+    // PatientD bed
     ctx.beginPath();
     ctx.ellipse(1200, 800, 130, 18, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -729,6 +1071,81 @@ export class HospitalScene {
   //   ctx.fillRect(this.movementBounds.left  - 2,     this.movementBounds.bottom - m + 2, m, m);
   //   ctx.fillRect(this.movementBounds.right - m + 2, this.movementBounds.bottom - m + 2, m, m);
   // }
+
+  // Pulsing bell icon drawn above Bed D while Karen's call bell is
+  // unanswered (Day 3 mechanic). Pure canvas shapes — no asset required.
+  private drawBedDBell(): void {
+    const ctx = this.ctx;
+    const t = performance.now();
+    const pulse = 0.5 + 0.5 * Math.sin(t / 300);   // 0..1
+    const scale = 1 + pulse * 0.18;                 // 1.00..1.18
+
+    // Position: slightly left of the bed centre (user-tuned)
+    const cx = 1221;
+    const cy = 420;
+
+    ctx.save();
+
+    // Expanding ripple rings — three concentric circles at staggered phases
+    // that grow outward and fade as they go, simulating the bell "ringing".
+    const ringCount = 3;
+    const maxRadius = 72;
+    for (let i = 0; i < ringCount; i++) {
+      const phase = ((t / 900) + i / ringCount) % 1; // 0..1, offset per ring
+      const r = 16 + phase * (maxRadius - 16);
+      const alpha = (1 - phase) * 0.7;
+      ctx.strokeStyle = `rgba(255, 220, 120, ${alpha})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Soft glow halo
+    const glowR = 42 + pulse * 10;
+    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+    glow.addColorStop(0, `rgba(255, 220, 120, ${0.45 + 0.35 * pulse})`);
+    glow.addColorStop(1, 'rgba(255, 220, 120, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Bell body — draw around (cx, cy), transformed for pulse scaling
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+
+    // Dome
+    ctx.fillStyle = '#f4c447';
+    ctx.strokeStyle = '#8a5a00';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-18, 10);
+    ctx.lineTo(-14, -4);
+    ctx.quadraticCurveTo(-14, -20, 0, -22);
+    ctx.quadraticCurveTo(14, -20, 14, -4);
+    ctx.lineTo(18, 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Rim
+    ctx.fillStyle = '#d9a028';
+    ctx.fillRect(-20, 10, 40, 4);
+    ctx.strokeRect(-20, 10, 40, 4);
+
+    // Handle
+    ctx.fillStyle = '#8a5a00';
+    ctx.fillRect(-2.5, -28, 5, 8);
+
+    // Clapper
+    ctx.fillStyle = '#8a5a00';
+    ctx.beginPath();
+    ctx.arc(0, 16, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
 
   private drawInteractionPrompt(patient: Patient): void {
     const ctx = this.ctx;
@@ -817,8 +1234,13 @@ export class HospitalScene {
       ctx.fillText(this.pagerNotifications.toString(), badgeX, badgeYFloat);
     }
 
-    // Check for hover and draw tooltip
-    if (this.isMouseOverPager()) {
+    // Check for hover and draw tooltip (+ play item sfx on hover-enter)
+    const pagerHovered = this.isMouseOverPager();
+    if (pagerHovered && !this.pagerWasHovered) {
+      playOnce(SFX.ITEM, 0.35);
+    }
+    this.pagerWasHovered = pagerHovered;
+    if (pagerHovered) {
       this.drawPagerTooltip(backdropRight + 10, backdropTop + backdropHeight / 2);
     }
   }
@@ -985,10 +1407,70 @@ export class HospitalScene {
       ctx.fillText(this.phoneNotifications.toString(), badgeX, badgeYFloat);
     }
 
-    // Check for hover and draw tooltip
-    if (this.isMouseOverPhone()) {
+    // Check for hover and draw tooltip (+ play item sfx on hover-enter)
+    const phoneHovered = this.isMouseOverPhone();
+    if (phoneHovered && !this.phoneWasHovered) {
+      playOnce(SFX.ITEM, 0.35);
+    }
+    this.phoneWasHovered = phoneHovered;
+    if (phoneHovered) {
       this.drawPhoneTooltip(backdropRight + 10, backdropTop + backdropHeight / 2);
     }
+
+    // Day 1 only: persistent "Click to open the message" hint next to the
+    // phone icon so the player notices the first-ever phone notification.
+    // Shown only while the popup isn't already open.
+    if (this.currentDay === 1 && this.phoneNotifications > 0 && !this.phonePopupActive) {
+      this.drawDay1PhoneHint(backdropRight, cfg.y, cfg.height);
+    }
+  }
+
+  // Pulsing floating hint card — only appears on Day 1 to call out the
+  // phone notification for the very first time.
+  private drawDay1PhoneHint(phoneRight: number, phoneY: number, phoneH: number): void {
+    const ctx = this.ctx;
+    const pulse = 0.7 + Math.abs(Math.sin(performance.now() / 500)) * 0.3;
+    const text = 'Click to open the message';
+
+    ctx.font = 'bold 14px "Segoe UI", sans-serif';
+    const padX = 14;
+    const textW = ctx.measureText(text).width;
+    const boxW = textW + padX * 2;
+    const boxH = 38;
+    const boxX = phoneRight + 18;
+    const boxY = phoneY + (phoneH - boxH) / 2;
+
+    ctx.save();
+    ctx.globalAlpha = pulse;
+
+    // Panel
+    ctx.fillStyle = '#2c3e50';
+    this.roundRect(ctx, boxX - 3, boxY - 3, boxW + 6, boxH + 6, 10);
+    ctx.fill();
+    ctx.fillStyle = '#34495e';
+    this.roundRect(ctx, boxX, boxY, boxW, boxH, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#5a6d7f';
+    ctx.lineWidth = 1.5;
+    this.roundRect(ctx, boxX + 1, boxY + 1, boxW - 2, boxH - 2, 7);
+    ctx.stroke();
+
+    // Small pointer triangle on the left edge, aiming at the phone
+    ctx.fillStyle = '#34495e';
+    ctx.beginPath();
+    ctx.moveTo(boxX, boxY + boxH / 2);
+    ctx.lineTo(boxX - 10, boxY + boxH / 2 - 7);
+    ctx.lineTo(boxX - 10, boxY + boxH / 2 + 7);
+    ctx.closePath();
+    ctx.fill();
+
+    // Label
+    ctx.fillStyle = '#ecf0f1';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, boxX + boxW / 2, boxY + boxH / 2);
+
+    ctx.restore();
   }
 
   // Check if mouse is over the phone area
@@ -1068,7 +1550,12 @@ export class HospitalScene {
 
   // Set phone notifications (call this when messages arrive)
   public setPhoneNotifications(count: number): void {
+    const prev = this.phoneNotifications;
     this.phoneNotifications = Math.max(0, count);
+    // Play the notif ping when transitioning from 0 → non-zero
+    if (prev === 0 && this.phoneNotifications > 0) {
+      playOnce(SFX.PHONE_PING, 0.55);
+    }
   }
   
   // ── Draw completion text box (similar to DialogueScene) ──────────────────
@@ -1174,33 +1661,49 @@ export class HospitalScene {
     const screenY = phoneY + cfg.contentAreaY;
     const screenWidth = cfg.contentAreaWidth;
     const screenHeight = cfg.contentAreaHeight;
-    
-    // Draw backdrop to hide "ONE NEW MESSAGE" text
+
+    // Green screen backdrop — top corners rounded, extends all the way to the
+    // bottom of the canvas with a flat bottom edge.
     ctx.fillStyle = cfg.screenColor;
-    this.roundRect(ctx, screenX, screenY, screenWidth, screenHeight, 8);
+    ctx.beginPath();
+    (ctx as any).roundRect(
+      screenX,
+      screenY,
+      screenWidth,
+      this.height - screenY,
+      [8, 8, 0, 0] // [top-left, top-right, bottom-right, bottom-left]
+    );
     ctx.fill();
     
     // Get current dialogue
     const currentDialogue = this.PHONE_DIALOGUES[this.phoneDialogueStep];
     
-    // Draw character sprite (always Lylia, with bobbing)
-    if (this.lyliaSpriteLoaded) {
-      const img = this.lyliaSprite;
+    // Draw character sprite based on current dialogue's `sprite` field
+    // Supported: 'lylia' (default), 'nurse' (for new colleagues like Ying Ying), 'none'
+    let phoneSprite: HTMLImageElement | null = null;
+    const spriteKey = currentDialogue.sprite;
+    if (spriteKey === 'nurse' && this.nurseSprite.complete && this.nurseSprite.naturalWidth > 0) {
+      phoneSprite = this.nurseSprite;
+    } else if (spriteKey !== 'none' && this.lyliaSpriteLoaded) {
+      phoneSprite = this.lyliaSprite;
+    }
+
+    if (phoneSprite) {
+      const img = phoneSprite;
       const spriteNaturalW = img.naturalWidth;
       const spriteNaturalH = img.naturalHeight;
-      
-      // Scale to fit within sprite area
+
       const scale = Math.min(
         (screenWidth - cfg.spritePadding * 2) / spriteNaturalW,
         cfg.spriteMaxHeight / spriteNaturalH,
-        1 // Don't upscale
+        1
       );
-      
+
       const spriteWidth = spriteNaturalW * scale;
       const spriteHeight = spriteNaturalH * scale;
       const spriteX = screenX + (screenWidth - spriteWidth) / 2;
       const spriteY = screenY + cfg.spritePadding + this.phoneBobOffset;
-      
+
       ctx.drawImage(img, spriteX, spriteY, spriteWidth, spriteHeight);
     }
     
@@ -1296,14 +1799,70 @@ export class HospitalScene {
     ctx.fillText(line, x, currentY);
   }
 
+  // Day indicator — top-right, same card styling as pager/phone
+  private drawDayIndicator(): void {
+    const ctx = this.ctx;
+    const cfg = this.DAY_INDICATOR;
+    const x = this.width - cfg.width - cfg.rightOffset;
+    const y = cfg.y;
+
+    // Outer border
+    ctx.fillStyle = '#2c3e50';
+    this.roundRect(ctx, x - 3, y - 3, cfg.width + 6, cfg.height + 6, cfg.backdropRadius + 2);
+    ctx.fill();
+
+    // Inner background
+    ctx.fillStyle = '#34495e';
+    this.roundRect(ctx, x, y, cfg.width, cfg.height, cfg.backdropRadius);
+    ctx.fill();
+
+    // Highlight border
+    ctx.strokeStyle = '#5a6d7f';
+    ctx.lineWidth = 2;
+    this.roundRect(ctx, x + 2, y + 2, cfg.width - 4, cfg.height - 4, cfg.backdropRadius - 1);
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = '#ecf0f1';
+    ctx.font = 'bold 20px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Day ' + this.currentDay, x + cfg.width / 2, y + cfg.height / 2);
+  }
+
   private drawUI(): void {
     const ctx = this.ctx;
+
+    // Controls tooltip — bottom-right. Sized to the widest line so it doesn't
+    // leave extra empty space.
+    const lines = ['A/D or ← →: Move', 'E: Interact', 'ESC: Menu'];
+    const font = '14px Arial';
+    ctx.font = font;
+
+    const padX = 14;
+    const padY = 10;
+    const lineH = 20;
+    let maxW = 0;
+    for (const l of lines) {
+      const w = ctx.measureText(l).width;
+      if (w > maxW) maxW = w;
+    }
+
+    const boxW = maxW + padX * 2;
+    const boxH = lineH * lines.length + padY * 2;
+    const boxX = this.width - boxW - 10;
+    const boxY = this.height - boxH - 10;
+
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(this.width - 260, this.height - 90, 250, 90);
+    this.roundRect(ctx, boxX, boxY, boxW, boxH, 8);
+    ctx.fill();
+
     ctx.fillStyle = '#ffffff';
-    ctx.font      = '14px Arial';
+    ctx.font = font;
     ctx.textAlign = 'right';
-    ctx.fillText('A/D or ← →: Move',  this.width - 20, this.height - 55);
-    ctx.fillText('E: Interact', this.width - 20, this.height - 25);
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], boxX + boxW - padX, boxY + padY + lineH / 2 + i * lineH);
+    }
   }
 }
