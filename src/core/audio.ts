@@ -44,6 +44,10 @@ const baseVolumes = new Map<string, number>();
 // Active fade-out tickers keyed by audio src, so we can cancel them if a
 // start-request comes in before the fade finishes.
 const activeFades = new Map<string, number>();
+// Loops the game has asked to play. If the browser's autoplay policy blocks
+// them on page load, we replay these the instant the user makes any gesture.
+const intendedLoops = new Set<string>();
+let autoplayUnlocked = false;
 
 // Vite still groups music tracks under /audio/music/ in the bundle path, so
 // this classifier keeps working for both dev and production builds.
@@ -94,6 +98,25 @@ export function applyVolumeSettings(): void {
   });
 }
 onSettingsChange(applyVolumeSettings);
+
+// ── Autoplay retry ────────────────────────────────────────────────────────
+// Browsers block audio.play() before the user interacts with the page. The
+// first time they click / press a key / tap, unlock and replay any loops
+// the game has already asked to start.
+function unlockAutoplayOnce(): void {
+  if (autoplayUnlocked) return;
+  autoplayUnlocked = true;
+  intendedLoops.forEach((path) => {
+    const audio = cache.get(path);
+    if (audio && audio.paused) {
+      audio.play().catch(() => {});
+    }
+  });
+}
+const unlockOpts: AddEventListenerOptions = { once: true, capture: true };
+window.addEventListener('pointerdown', unlockAutoplayOnce, unlockOpts);
+window.addEventListener('keydown',     unlockAutoplayOnce, unlockOpts);
+window.addEventListener('touchstart',  unlockAutoplayOnce, unlockOpts);
 
 // ── Path maps (exported) ───────────────────────────────────────────────────
 // These are the URLs Vite generated for each imported file. Scenes import
@@ -148,14 +171,18 @@ export function playClipped(path: string, durationMs: number, volume = 0.5): voi
 
 export function startLoop(path: string, volume = 0.3): void {
   cancelFade(path);
+  intendedLoops.add(path);
   const audio = getOrLoad(path, { volume, loop: true });
   if (audio.paused) {
+    // On first page load this may silently reject (autoplay policy); the
+    // retry in unlockAutoplayOnce() will pick it up on first user gesture.
     audio.play().catch(() => {});
   }
 }
 
 export function stopLoop(path: string): void {
   cancelFade(path);
+  intendedLoops.delete(path);
   const audio = cache.get(path);
   if (audio && !audio.paused) {
     audio.pause();
@@ -167,6 +194,7 @@ export function fadeOutLoop(path: string, durationMs = 900): void {
   const audio = cache.get(path);
   if (!audio || audio.paused) return;
   cancelFade(path);
+  intendedLoops.delete(path);
 
   const startVolume = audio.volume;
   const stepMs = 40;
