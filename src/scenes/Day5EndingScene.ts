@@ -321,18 +321,12 @@ export class Day5EndingScene {
     if (this.ambulancePlayed) return;
     this.ambulancePlayed = true;
     try {
-      // Best-effort: look for an ambulance-ish SFX. Falls back to the outside
-      // hospital street (vehicles) track if ambulance.mp3 isn't present.
-      const src = '/src/assets/audio/sfx/ambulance.mp3';
-      const audio = new Audio(src);
-      audio.volume = 0.6;
-      audio.play().catch(() => {
-        // Fallback — try the outside street vehicles track
-        const fallback = new Audio('/src/assets/audio/sfx/outside hospital street (vehicles).mp3');
-        fallback.volume = 0.5;
-        fallback.play().catch(() => {});
-        this.ambulanceAudio = fallback;
-      });
+      // No dedicated ambulance.mp3 exists — use the outside-street (vehicles)
+      // track which the audio module bundles via Vite imports. Raw
+      // '/src/assets/...' strings would 404 in production on Vercel.
+      const audio = new Audio(SFX.STREET_VEHICLES);
+      audio.volume = 0.55;
+      audio.play().catch(() => {});
       this.ambulanceAudio = audio;
     } catch {
       /* silently fail */

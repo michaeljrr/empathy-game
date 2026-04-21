@@ -7,8 +7,36 @@
 //  setting (bgmVolume for tracks in /audio/music/, sfxVolume otherwise).
 //  When the player changes volume in Settings, all active elements
 //  rebalance immediately.
+//
+//  IMPORTANT: every audio path is imported as a module (resolved at build
+//  time by Vite) so the production bundle on Vercel actually ships the
+//  files. Raw '/src/assets/...' strings would only work in dev.
 
 import { getSettings, onSettingsChange } from './settings';
+
+// ── SFX imports ───────────────────────────────────────────────────────────
+import sfxChoice         from '../assets/audio/sfx/selection (choice).mp3';
+import sfxItem           from '../assets/audio/sfx/selection (item).mp3';
+import sfxPhonePing      from '../assets/audio/sfx/phone (notif ping).mp3';
+import sfxPhoneMsg       from '../assets/audio/sfx/phone (message send&received).mp3';
+import sfxPagerBeep      from '../assets/audio/sfx/pager beeping.mp3';
+import sfxFootsteps      from '../assets/audio/sfx/footsteps.mp3';
+import sfxBell           from '../assets/audio/sfx/bell ring.mp3';
+import sfxMuffledVoices  from '../assets/audio/sfx/muffled voices.mp3';
+import sfxHospitalAmb    from '../assets/audio/sfx/hospital_background_noise.mp3';
+import sfxStreetVehicles from '../assets/audio/sfx/outside hospital street (vehicles).mp3';
+import sfxBedALaugh      from '../assets/audio/sfx/bed a laughing.mp3';
+import sfxDinerAmbience  from '../assets/audio/sfx/diner ambience.mp3';
+import sfxVelcro         from '../assets/audio/sfx/velcro.mp3';
+import sfxMachineBeep    from '../assets/audio/sfx/machine beep.mp3';
+import sfxBreakRoomEat   from '../assets/audio/sfx/break room (quiet, eating).mp3';
+
+// ── BGM imports ───────────────────────────────────────────────────────────
+import bgmJovial                from '../assets/audio/music/jovial.mp3';
+import bgmEmotionalContemplative from '../assets/audio/music/emotional_contemplative.mp3';
+import bgmEmotionalSad          from '../assets/audio/music/emotional_sad.mp3';
+import bgmSad                   from '../assets/audio/music/sad.mp3';
+import bgmEnd                   from '../assets/audio/music/end_bgm.mp3';
 
 const cache = new Map<string, HTMLAudioElement>();
 // Per-path "base" volumes (before user multiplier is applied).
@@ -17,8 +45,10 @@ const baseVolumes = new Map<string, number>();
 // start-request comes in before the fade finishes.
 const activeFades = new Map<string, number>();
 
+// Vite still groups music tracks under /audio/music/ in the bundle path, so
+// this classifier keeps working for both dev and production builds.
 function isBGMPath(path: string): boolean {
-  return path.indexOf('/audio/music/') !== -1;
+  return path.indexOf('/audio/music/') !== -1 || path.indexOf('audio%2Fmusic') !== -1;
 }
 
 function volumeMultiplier(path: string): number {
@@ -55,50 +85,49 @@ function cancelFade(path: string): void {
   }
 }
 
-// Reapply user volume settings to every cached element. Called automatically
-// whenever settings change.
+// Reapply user volume settings to every cached element.
 export function applyVolumeSettings(): void {
   cache.forEach((audio, path) => {
-    // Skip fading-out tracks — their volume is mid-interpolation; the fade
-    // will complete on its own and the next start will pick up fresh volume.
+    // Skip fading-out tracks — their volume is mid-interpolation.
     if (activeFades.has(path)) return;
     audio.volume = effectiveVolume(path);
   });
 }
 onSettingsChange(applyVolumeSettings);
 
-// ── Paths ──────────────────────────────────────────────────────────────────
+// ── Path maps (exported) ───────────────────────────────────────────────────
+// These are the URLs Vite generated for each imported file. Scenes import
+// `SFX` / `BGM` constants and pass them into play/loop helpers — they never
+// hard-code paths.
 
 export const SFX = {
-  CHOICE:          '/src/assets/audio/sfx/selection (choice).mp3',
-  ITEM:            '/src/assets/audio/sfx/selection (item).mp3',
-  PHONE_PING:      '/src/assets/audio/sfx/phone (notif ping).mp3',
-  PHONE_MSG:       '/src/assets/audio/sfx/phone (message send&received).mp3',
-  PAGER_BEEP:      '/src/assets/audio/sfx/pager beeping.mp3',
-  FOOTSTEPS:       '/src/assets/audio/sfx/footsteps.mp3',
-  BELL:            '/src/assets/audio/sfx/bell ring.mp3',
-  MUFFLED_VOICES:  '/src/assets/audio/sfx/muffled voices.mp3',
-  HOSPITAL_AMBIENT:'/src/assets/audio/sfx/hospital_background_noise.mp3',
-  STREET_VEHICLES: '/src/assets/audio/sfx/outside hospital street (vehicles).mp3',
-  BED_A_LAUGH:     '/src/assets/audio/sfx/bed a laughing.mp3',
-  DINER_AMBIENCE:  '/src/assets/audio/sfx/diner ambience.mp3',
-  VELCRO:          '/src/assets/audio/sfx/velcro.mp3',
-  MACHINE_BEEP:    '/src/assets/audio/sfx/machine beep.mp3',
-  BREAK_ROOM_EAT:  '/src/assets/audio/sfx/break room (quiet, eating).mp3',
+  CHOICE:          sfxChoice,
+  ITEM:            sfxItem,
+  PHONE_PING:      sfxPhonePing,
+  PHONE_MSG:       sfxPhoneMsg,
+  PAGER_BEEP:      sfxPagerBeep,
+  FOOTSTEPS:       sfxFootsteps,
+  BELL:            sfxBell,
+  MUFFLED_VOICES:  sfxMuffledVoices,
+  HOSPITAL_AMBIENT:sfxHospitalAmb,
+  STREET_VEHICLES: sfxStreetVehicles,
+  BED_A_LAUGH:     sfxBedALaugh,
+  DINER_AMBIENCE:  sfxDinerAmbience,
+  VELCRO:          sfxVelcro,
+  MACHINE_BEEP:    sfxMachineBeep,
+  BREAK_ROOM_EAT:  sfxBreakRoomEat,
 };
 
 export const BGM = {
-  JOVIAL:                  '/src/assets/audio/music/jovial.mp3',
-  EMOTIONAL_CONTEMPLATIVE: '/src/assets/audio/music/emotional_contemplative.mp3',
-  EMOTIONAL_SAD:           '/src/assets/audio/music/emotional_sad.mp3',
-  SAD:                     '/src/assets/audio/music/sad.mp3',
-  END:                     '/src/assets/audio/music/end_bgm.mp3',
+  JOVIAL:                  bgmJovial,
+  EMOTIONAL_CONTEMPLATIVE: bgmEmotionalContemplative,
+  EMOTIONAL_SAD:           bgmEmotionalSad,
+  SAD:                     bgmSad,
+  END:                     bgmEnd,
 };
 
 // ── Play helpers ───────────────────────────────────────────────────────────
 
-// Play a sound from the start. Safe to call rapidly — each call restarts
-// playback of the same cached element.
 export function playOnce(path: string, volume = 0.5): void {
   cancelFade(path);
   const audio = getOrLoad(path, { volume });
@@ -106,8 +135,6 @@ export function playOnce(path: string, volume = 0.5): void {
   audio.play().catch(() => {});
 }
 
-// Play the first `durationMs` of a sound, then stop. Used for UI blips where
-// you want just a short clip of a longer asset.
 export function playClipped(path: string, durationMs: number, volume = 0.5): void {
   cancelFade(path);
   const audio = getOrLoad(path, { volume });
@@ -119,7 +146,6 @@ export function playClipped(path: string, durationMs: number, volume = 0.5): voi
   }, durationMs);
 }
 
-// Start a looping sound if it isn't already playing (idempotent).
 export function startLoop(path: string, volume = 0.3): void {
   cancelFade(path);
   const audio = getOrLoad(path, { volume, loop: true });
@@ -128,7 +154,6 @@ export function startLoop(path: string, volume = 0.3): void {
   }
 }
 
-// Immediate stop — use fadeOutLoop for a gentler exit.
 export function stopLoop(path: string): void {
   cancelFade(path);
   const audio = cache.get(path);
@@ -138,8 +163,6 @@ export function stopLoop(path: string): void {
   }
 }
 
-// Gradually fade an active loop (or one-shot) to silence over `durationMs`,
-// then pause & reset. Safe to call on a non-playing audio — no-op.
 export function fadeOutLoop(path: string, durationMs = 900): void {
   const audio = cache.get(path);
   if (!audio || audio.paused) return;
@@ -159,7 +182,6 @@ export function fadeOutLoop(path: string, durationMs = 900): void {
       activeFades.delete(path);
       audio.pause();
       audio.currentTime = 0;
-      // Restore to the user-adjusted effective volume for the next startLoop
       audio.volume = effectiveVolume(path);
     }
   }, stepMs);
