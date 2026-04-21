@@ -2,6 +2,11 @@ import entryBg    from '../assets/images/entry/entry_background.png';
 import gameTitleImg from '../assets/images/entry/game_title.png';
 import { SFX, BGM, playOnce, startLoop } from '../core/audio';
 
+// Module-level flag — once the player has dismissed the splash gate on this
+// page load, we don't show it again (e.g. when returning from "Back to Main"
+// on Day 6's ending). A full page refresh resets this and shows the gate again.
+let splashDismissed = false;
+
 export class EntryScene {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -44,6 +49,12 @@ export class EntryScene {
   private settingsButtonHovered = false;
   private settingsClickFlash = 0;
 
+  // Splash gate — dismisses on first click/keydown so we can start the BGM
+  // (browsers block audio autoplay until the user makes a gesture).
+  private splashActive = false;
+  private splashFadeOut = 0; // 0 = fully visible, 1 = fully gone
+  private boundSplashKey: (e: KeyboardEvent) => void = () => {};
+
   private get width()  { return (this.canvas as any).logicalWidth  || this.canvas.width;  }
   private get height() { return (this.canvas as any).logicalHeight || this.canvas.height; }
 
@@ -82,10 +93,20 @@ export class EntryScene {
     );
     pf.load().then(f => { document.fonts.add(f); this.fontLoaded = true; }).catch(() => {});
 
-    // Jovial BGM loops while the entry screen is up. Autoplay may be blocked
-    // until the first user interaction; that's fine — the sound starts on
-    // hover/click or when the player returns to the main menu later.
+    // Jovial BGM is requested immediately so it's ready to start the moment
+    // the splash gate is dismissed (autoplay unlocks on first gesture).
     startLoop(BGM.JOVIAL, 0.35);
+
+    // First page load → show splash gate. On subsequent re-entries (e.g.
+    // returning from Day 6's "Back to Main") this stays dismissed.
+    if (!splashDismissed) {
+      this.splashActive = true;
+      this.splashFadeOut = 0;
+    }
+
+    // Keydown also dismisses the splash (e.g. Space/Enter)
+    this.boundSplashKey = (e: KeyboardEvent) => this.onAnyKey(e);
+    window.addEventListener('keydown', this.boundSplashKey);
   }
 
   private setupEventListeners(): void {
@@ -99,6 +120,7 @@ export class EntryScene {
     this.canvas.removeEventListener('mousemove', this.boundMouseMove);
     this.canvas.removeEventListener('click',     this.boundClick);
     this.canvas.style.cursor = 'default';
+    window.removeEventListener('keydown', this.boundSplashKey);
     // Jovial BGM keeps playing into the NameInput screen — it's stopped
     // (with a fade) when the player finalises their name.
   }
@@ -114,6 +136,26 @@ export class EntryScene {
     // Resume the jovial BGM on re-entry (e.g. via Back to Main). It'll keep
     // playing across the name-input screen and only fade out on submit.
     startLoop(BGM.JOVIAL, 0.35);
+
+    // Re-attach the splash keydown listener (deactivate removed it)
+    window.removeEventListener('keydown', this.boundSplashKey);
+    this.boundSplashKey = (e: KeyboardEvent) => this.onAnyKey(e);
+    window.addEventListener('keydown', this.boundSplashKey);
+    // Returning from another scene = audio is already unlocked; don't re-show gate
+    this.splashActive = false;
+    this.splashFadeOut = 1;
+  }
+
+  private onAnyKey(_e: KeyboardEvent): void {
+    if (this.splashActive && splashDismissed === false) {
+      this.dismissSplash();
+    }
+  }
+
+  private dismissSplash(): void {
+    if (!this.splashActive) return;
+    splashDismissed = true;
+    // Leave splashActive true while it fades — update() will finish the job.
   }
 
   private getCanvasCoordinates(e: MouseEvent): { x: number; y: number } {
@@ -139,6 +181,17 @@ export class EntryScene {
   }
 
   private handleClick(e: MouseEvent): void {
+    // First click dismisses the splash gate (and unlocks autoplay via the
+    // global listener in audio.ts). Don't fall through to the menu buttons
+    // so the player doesn't accidentally hit Play/Settings on the same click.
+    if (this.splashActive && !splashDismissed) {
+      this.dismissSplash();
+      return;
+    }
+    // Ignore clicks during fade-out so the button under the splash isn't
+    // mis-triggered through a half-transparent overlay.
+    if (this.splashActive) return;
+
     const { x, y } = this.getCanvasCoordinates(e);
     if (this.isPointInButton(x, y, this.playButtonBounds)) {
       this.clickFlash = 10;
@@ -158,6 +211,11 @@ export class EntryScene {
   public update(): void {
     if (this.clickFlash > 0) this.clickFlash--;
     if (this.settingsClickFlash > 0) this.settingsClickFlash--;
+    // Splash fade-out — finishes and deactivates once fully transparent
+    if (this.splashActive && splashDismissed) {
+      this.splashFadeOut = Math.min(1, this.splashFadeOut + 0.05);
+      if (this.splashFadeOut >= 1) this.splashActive = false;
+    }
   }
 
   public render(): void {
@@ -189,6 +247,42 @@ export class EntryScene {
     // Pixel-art style buttons
     this.drawPixelButton(this.playButtonBounds, 'PLAY', this.playButtonHovered, this.clickFlash > 0);
     this.drawPixelButton(this.settingsButtonBounds, 'SETTINGS', this.settingsButtonHovered, this.settingsClickFlash > 0);
+
+    // Splash gate sits above the main menu buttons so its click is what
+    // unlocks autoplay. Always rendered last so it's always on top.
+    if (this.splashActive) {
+      this.drawSplashGate();
+    }
+  }
+
+  private drawSplashGate(): void {
+    const ctx = this.ctx;
+    const w = this.width;
+    const h = this.height;
+
+    // Overlay alpha fades from ~0.85 → 0 as splashFadeOut goes 0 → 1
+    const overlayAlpha = 0.85 * (1 - this.splashFadeOut);
+    ctx.fillStyle = `rgba(5, 8, 14, ${overlayAlpha})`;
+    ctx.fillRect(0, 0, w, h);
+
+    // Content opacity tracks the overlay so the text fades out together
+    const contentAlpha = 1 - this.splashFadeOut;
+    if (contentAlpha <= 0) return;
+
+    ctx.save();
+    ctx.globalAlpha = contentAlpha;
+
+    // "CLICK TO START" — pulsing to draw the eye
+    const pulse = 0.6 + Math.abs(Math.sin(performance.now() / 500)) * 0.4;
+    ctx.fillStyle = '#f5f0e8';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha = contentAlpha * pulse;
+    const font = this.fontLoaded ? "'Press Start 2P'" : "'Courier New', monospace";
+    ctx.font = `bold 24px ${font}`;
+    ctx.fillText('CLICK TO START', w / 2, h / 2 + 30);
+
+    ctx.restore();
   }
 
   private drawPixelButton(
