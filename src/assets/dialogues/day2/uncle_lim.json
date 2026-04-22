@@ -89,7 +89,7 @@
     ]
   },
   "uncle_grabs_hand": {
-    "text": "Uncle lim grabs your hand and squeezes it gently\n\nCome on, don't be too sad over it! I'm not a pity case! I've lived with this for... three years already, you know? These 'water-balloon' legs may look like water balloons but they've carried me to dialysis and back, three times a week, over a thousand days... and they haven't failed me yet.",
+    "text": "Uncle Lim grabs your hand and squeezes it gently\n\nCome on, don't be too sad over it! I'm not a pity case! I've lived with this for... three years already, you know? These 'water-balloon' legs may look like water balloons but they've carried me to dialysis and back, three times a week, over a thousand days... and they haven't failed me yet.",
     "expression": "neutral",
     "speaker": "character",
     "options": [
@@ -123,7 +123,7 @@
     "options": [
       {
         "text": "",
-        "response": "you worked hard for them uncle and im sure they appreciate it",
+        "response": "You worked hard for them Uncle and I'm sure they appreciate it.",
         "responseExpression": "happy",
         "responseSpeaker": "player",
         "next": "coke_story"
@@ -200,8 +200,22 @@
       }
     ]
   },
+  "my_wife": {
+    "text": "Once this transplant is over and you have that new kidney... you must remember to take care of yourself. No more 'one a day is fine' logic. You've done your part for the kids; now you have to stay healthy so you can actually enjoy being their father.",
+    "expression": "neutral",
+    "speaker": "player",
+    "options": [
+      {
+        "text": "",
+        "response": "(He looks at you, his eyes soft and wistful)\n\nAiyo, Nurse... you sound just like her. Exactly like my wife. She used to point her finger at me just like that whenever I reached for the fridge. I guess I finally have to admit she was the smart one.",
+        "responseExpression": "neutral",
+        "responseSpeaker": "character",
+        "next": "kopi_kosong"
+      }
+    ]
+  },
   "kopi_kosong": {
-    "text": "you grin cheekily\n\nNext time, I want to see you drinking kopi o kosong in your hand, okay?",
+    "text": "You grin cheekily\n\nNext time, I want to see you drinking kopi o kosong in your hand, okay?",
     "expression": "happy",
     "speaker": "player",
     "options": [
