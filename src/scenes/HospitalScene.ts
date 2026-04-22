@@ -1417,16 +1417,17 @@ export class HospitalScene {
       this.drawPhoneTooltip(backdropRight + 10, backdropTop + backdropHeight / 2);
     }
 
-    // Day 1 only: persistent "Click to open the message" hint next to the
-    // phone icon so the player notices the first-ever phone notification.
-    // Shown only while the popup isn't already open.
-    if (this.currentDay === 1 && this.phoneNotifications > 0 && !this.phonePopupActive) {
+    // Day 1 only: persistent "Click to open the message" hint on the right
+    // side of the phone icon. Hidden while the player is hovering the phone
+    // so the hover tooltip has the spotlight without a collision.
+    if (this.currentDay === 1 && this.phoneNotifications > 0 && !this.phonePopupActive && !phoneHovered) {
       this.drawDay1PhoneHint(backdropRight, cfg.y, cfg.height);
     }
   }
 
   // Pulsing floating hint card — only appears on Day 1 to call out the
-  // phone notification for the very first time.
+  // phone notification for the very first time. Anchored on the right of
+  // the phone with a left-pointing arrow.
   private drawDay1PhoneHint(phoneRight: number, phoneY: number, phoneH: number): void {
     const ctx = this.ctx;
     const pulse = 0.7 + Math.abs(Math.sin(performance.now() / 500)) * 0.3;
@@ -1455,7 +1456,7 @@ export class HospitalScene {
     this.roundRect(ctx, boxX + 1, boxY + 1, boxW - 2, boxH - 2, 7);
     ctx.stroke();
 
-    // Small pointer triangle on the left edge, aiming at the phone
+    // Left-pointing triangle on the left edge, aiming at the phone
     ctx.fillStyle = '#34495e';
     ctx.beginPath();
     ctx.moveTo(boxX, boxY + boxH / 2);
@@ -1859,10 +1860,10 @@ export class HospitalScene {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = font;
-    ctx.textAlign = 'right';
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     for (let i = 0; i < lines.length; i++) {
-      ctx.fillText(lines[i], boxX + boxW - padX, boxY + padY + lineH / 2 + i * lineH);
+      ctx.fillText(lines[i], boxX + padX, boxY + padY + lineH / 2 + i * lineH);
     }
   }
 }

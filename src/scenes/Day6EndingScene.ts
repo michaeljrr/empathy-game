@@ -65,7 +65,7 @@ export class Day6EndingScene {
 
   // Letter reveal
   private letterRevealProgress = 0;    // 0 → 1
-  private readonly LETTER_REVEAL_SPEED = 0.012;
+  private readonly LETTER_REVEAL_SPEED = 0.005;
 
   // Narration typewriter
   private narrationIndex = 0;
@@ -98,6 +98,24 @@ export class Day6EndingScene {
   private boundMouseMove!: (e: MouseEvent) => void;
   private boundClick!: (e: MouseEvent) => void;
 
+  // ── Paper / letter layout (TUNE THESE) ───────────────────────────────────
+  // Paper size — fractions of canvas width / height. 1.0 = full canvas.
+  private readonly PAPER_WIDTH_PCT  = 0.9;
+  private readonly PAPER_HEIGHT_PCT = 1.5;
+  // Paper position offset from centre (pixels). + = right / down.
+  private readonly PAPER_OFFSET_X = 0;
+  private readonly PAPER_OFFSET_Y = 0;
+  // Inner padding for text — fraction of the paper's longest edge.
+  private readonly PAPER_PADDING_PCT = 0.2;
+
+  // Text sizes (px) — change each independently.
+  private readonly TEXT_GREETING_SIZE    = 30; // "Dear Nurse,"
+  private readonly TEXT_BODY_SIZE        = 22; // body paragraphs
+  private readonly TEXT_BODY_LINE_H      = 32; // body line-height
+  private readonly TEXT_BODY_PARA_GAP    = 16; // gap between paragraphs
+  private readonly TEXT_SIGNOFF_SIZE     = 26; // "Yours sincerely," / "Your friend,"
+  private readonly TEXT_SIGNOFF_NAME_SIZE = 32; // "Uncle Lim"
+
   // Layout (matches DialogueScene)
   private readonly BOX_H = 180;
   private readonly BOX_PAD = 22;
@@ -117,6 +135,15 @@ export class Day6EndingScene {
   private get H(): number { return (this.canvas as any).logicalHeight || this.canvas.height; }
 
   // ── Public API ─────────────────────────────────────────────────────────────
+
+  // Dev helper — jump straight into the fully-revealed letter state so the
+  // paper UI can be tuned without replaying the whole game. Called from
+  // Game.ts' DEBUG_START_AT_PAPER boot flag.
+  public debugSkipToLetter(): void {
+    this.state = 'LETTER_READING';
+    this.fadeAlpha = 0;
+    this.letterRevealProgress = 1;
+  }
 
   public activate(): void {
     console.log('[Day6EndingScene] Activating');
@@ -383,53 +410,50 @@ export class Day6EndingScene {
     // the card size so the letter text has maximum room to breathe. If that
     // stretching ever becomes visually noticeable, swap in a paper PNG with
     // a matching canvas aspect.
-    const cardBaseW = w * 0.98;
-    const cardBaseH = h * 0.98;
+    const cardBaseW = w * this.PAPER_WIDTH_PCT;
+    const cardBaseH = h * this.PAPER_HEIGHT_PCT;
 
     const cardW = cardBaseW;
-    const cardH = cardBaseH * this.letterRevealProgress;
-    const cardX = (w - cardW) / 2;
-    const cardY = (h - cardH) / 2;
+    const cardH = cardBaseH; // paper always renders at full size — we slide it into view
+    const cardX = (w - cardW) / 2 + this.PAPER_OFFSET_X;
 
-    if (cardH < 6) return;
+    // letterRevealProgress drives a vertical slide instead of a height-reveal.
+    //   0 → paper sits fully below the canvas (off-screen)
+    //   1 → paper sits at its resting position
+    // When dismissing, progress decays back to 0 and the paper slides out
+    // the bottom. Text is positioned relative to drawY so it moves in lockstep.
+    const finalY    = (h - cardBaseH) / 2 + this.PAPER_OFFSET_Y;
+    const offscreenY = h + 20; // fully below visible canvas
+    const drawY = offscreenY + (finalY - offscreenY) * this.letterRevealProgress;
 
-    ctx.save();
+    // Bail out if the paper is still entirely off-screen (nothing to draw).
+    if (drawY >= h) return;
 
-    // Clip to the card area so the paper image reveals from the centre as
-    // the card grows in height.
-    ctx.beginPath();
-    this.rrect(cardX, cardY, cardW, cardH, 8);
-    ctx.clip();
-
+    // Paper image
     if (this.paper.loaded) {
-      // Draw the paper filling the full card area — stretched to max size.
-      const drawY = (h - cardBaseH) / 2;
-      ctx.drawImage(this.paper.element, cardX, drawY, cardW, cardBaseH);
+      ctx.drawImage(this.paper.element, cardX, drawY, cardW, cardH);
     } else {
       ctx.fillStyle = '#f1e6cd';
-      ctx.fillRect(cardX, cardY, cardW, cardH);
+      ctx.fillRect(cardX, drawY, cardW, cardH);
     }
 
-    ctx.restore();
-
-    // Text on top (only once the card is mostly open)
-    if (this.letterRevealProgress > 0.85) {
-      const drawY = (h - cardBaseH) / 2;
-      const pad = Math.max(cardW, cardBaseH) * 0.07;
+    // Text — rendered whenever the paper is in view, so it slides with it.
+    {
+      const pad = Math.max(cardW, cardBaseH) * this.PAPER_PADDING_PCT;
       const innerX = cardX + pad;
       const innerY = drawY + pad;
       const innerW = cardW - pad * 2;
 
       ctx.fillStyle = '#2d1f10';
 
-      // Greeting — scaled up for the bigger paper
-      ctx.font = 'italic 30px "Segoe Script", "Brush Script MT", "Apple Chancery", cursive';
+      // Greeting
+      ctx.font = `italic ${this.TEXT_GREETING_SIZE}px "Segoe Script", "Brush Script MT", "Apple Chancery", cursive`;
       ctx.textBaseline = 'top';
       ctx.textAlign = 'left';
       ctx.fillText('Dear Nurse,', innerX, innerY);
 
       // Body
-      ctx.font = 'italic 22px "Segoe Script", "Brush Script MT", "Apple Chancery", cursive';
+      ctx.font = `italic ${this.TEXT_BODY_SIZE}px "Segoe Script", "Brush Script MT", "Apple Chancery", cursive`;
       const body = [
         'I know your job is not easy. Long hours, difficult patients, and so much weight to carry every single day. But I want you to know — I may not be here today if you were not there to support me. Not just the checks and the medicine and the BP cuff. But the way you stayed. The way you listened. The way you never made me feel like a burden even when I was one.',
         "I hope you continue to impact the lives of your other patients the way you impacted mine. The world needs more nurses like you. More people like you.",
@@ -437,26 +461,24 @@ export class Day6EndingScene {
         "And when the time comes — let's drink kopi together, okay? I'll be waiting. I'll make sure to save you a seat at the coffee shop, right next to my kakis.",
         "I'll also make sure to pass on the kindness you have shown me. A promise is a promise."
       ];
-      let cy = innerY + 56;
-      const lineH = 32;
-      const paragraphGap = 16;
+      let cy = innerY + this.TEXT_GREETING_SIZE + 26;
       for (const para of body) {
-        cy = this.wrapParagraph(para, innerX, cy, innerW, lineH);
-        cy += paragraphGap;
+        cy = this.wrapParagraph(para, innerX, cy, innerW, this.TEXT_BODY_LINE_H);
+        cy += this.TEXT_BODY_PARA_GAP;
       }
 
       // Sign-off
       ctx.textAlign = 'right';
-      ctx.font = 'italic 26px "Segoe Script", "Brush Script MT", "Apple Chancery", cursive';
+      ctx.font = `italic ${this.TEXT_SIGNOFF_SIZE}px "Segoe Script", "Brush Script MT", "Apple Chancery", cursive`;
       ctx.fillText('Yours sincerely,', cardX + cardW - pad, drawY + cardBaseH - pad - 80);
       ctx.fillText('Your friend,', cardX + cardW - pad, drawY + cardBaseH - pad - 48);
-      ctx.font = 'italic 32px "Segoe Script", "Brush Script MT", "Apple Chancery", cursive';
+      ctx.font = `italic ${this.TEXT_SIGNOFF_NAME_SIZE}px "Segoe Script", "Brush Script MT", "Apple Chancery", cursive`;
       ctx.fillStyle = this.LETTER_ACCENT;
       ctx.fillText('Uncle Lim', cardX + cardW - pad, drawY + cardBaseH - pad - 10);
     }
 
-    // "E to continue" prompt once letter is fully open
-    if (this.state === 'LETTER_READING') {
+    // "E to continue" prompt once letter is fully slid into place
+    if (this.state === 'LETTER_READING' && this.letterRevealProgress >= 0.98) {
       const pulse = 0.45 + Math.abs(Math.sin(performance.now() / 500)) * 0.55;
       ctx.save();
       ctx.globalAlpha = pulse;
@@ -464,7 +486,7 @@ export class Day6EndingScene {
       ctx.font = '14px "Segoe UI", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('▼  E to continue', w / 2, cardY + cardH + 22);
+      ctx.fillText('▼  E to continue', w / 2, drawY + cardH - 16);
       ctx.restore();
     }
   }

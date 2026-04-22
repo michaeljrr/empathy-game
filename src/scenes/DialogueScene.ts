@@ -441,8 +441,8 @@ const DAY5_CHARACTERS: Record<string, CharacterConfig> = {
     stripBg: 'black',
     scriptKey: 'mr_soo_day5',
     talkSound: '/src/assets/audio/voices/elderly_male_blip.mp3',
-    allowUpscale: true,
-    spriteMaxH: 1.6, // Scale Mr Soo's PNG taller so he reads the same size as Uncle Lim / Auntie Tan
+    // Updated Mr Soo PNG is high-res — use the default 1.3 cap (matches
+    // every other character) and no upscale so he reads at the right size.
   },
   day5patientD: {
     id: 'day5patientD',
@@ -828,10 +828,13 @@ export class DialogueScene {
     }
 
     // ── Day 6 Bed A — at the reveal ("Uncle Lim. He passed last night.")
-    // swap the lightly-sad track for end_bgm (the "distorted music" cue).
+    // the lightly-sad track fades out, then a couple of seconds of silence
+    // before end_bgm kicks in for dramatic effect.
     if (id === 'day6patientA' && nodeKey === 'senior_nurse' && phase === 'response') {
       fadeOutLoop(BGM.EMOTIONAL_CONTEMPLATIVE, 1500);
-      startLoop(BGM.END, 0.3);
+      // Delay slightly longer than the fade so the silence is perceptible
+      // (fade ends at 1500 ms; music starts at 3500 ms → ~2 s of silence).
+      window.setTimeout(() => startLoop(BGM.END, 0.3), 3500);
     }
   }
 

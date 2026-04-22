@@ -88,6 +88,18 @@ export class Game {
 
     this.setupSceneChangeListener();
     this.setupPauseListeners();
+
+    // ── DEV: flip this flag to boot straight into Day 6's paper letter view
+    // for tuning paper/text visuals without replaying the game. Set false
+    // before shipping.
+    const DEBUG_START_AT_PAPER = false;
+    if (DEBUG_START_AT_PAPER) {
+      this.scenes.entry.deactivate();
+      this.currentScene = 'day6Ending';
+      this.scenes.day6Ending.activate();
+      this.scenes.day6Ending.debugSkipToLetter();
+    }
+
     this.startGameLoop();
   }
 
